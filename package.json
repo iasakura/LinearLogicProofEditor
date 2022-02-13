@@ -10,9 +10,12 @@
     "@types/node": "^16.7.13",
     "@types/react": "^17.0.20",
     "@types/react-dom": "^17.0.9",
+    "peggy": "^1.2.0",
     "react": "^17.0.2",
     "react-dom": "^17.0.2",
     "react-scripts": "5.0.0",
+    "styled-components": "^5.3.3",
+    "ts-pegjs": "^1.2.1",
     "typescript": "^4.4.2",
     "web-vitals": "^2.1.0"
   },
@@ -20,12 +23,25 @@
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "eject": "react-scripts eject",
+    "storybook": "start-storybook -p 6006 -s public",
+    "build-storybook": "build-storybook -s public",
+    "gen-parser": "./node_modules/.bin/peggy --plugin ./node_modules/ts-pegjs/src/tspegjs.js -o gen/parser.ts --cache src/linearLogic/parser.peggy"
   },
   "eslintConfig": {
     "extends": [
       "react-app",
       "react-app/jest"
+    ],
+    "overrides": [
+      {
+        "files": [
+          "**/*.stories.*"
+        ],
+        "rules": {
+          "import/no-anonymous-default-export": "off"
+        }
+      }
     ]
   },
   "browserslist": {
@@ -39,5 +55,30 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
+  },
+  "devDependencies": {
+    "@storybook/addon-actions": "^6.4.14",
+    "@storybook/addon-console": "^1.2.3",
+    "@storybook/addon-essentials": "^6.4.14",
+    "@storybook/addon-knobs": "^6.4.0",
+    "@storybook/addon-links": "^6.4.14",
+    "@storybook/addon-storysource": "^6.4.14",
+    "@storybook/addon-viewport": "^6.4.14",
+    "@storybook/builder-webpack5": "^6.4.14",
+    "@storybook/manager-webpack5": "^6.4.14",
+    "@storybook/node-logger": "^6.4.14",
+    "@storybook/preset-create-react-app": "^4.0.0",
+    "@storybook/react": "^6.4.14",
+    "@types/storybook__addon-actions": "^5.2.1",
+    "@types/storybook__addon-info": "^5.2.4",
+    "@types/storybook__addon-knobs": "^5.2.1",
+    "@types/storybook__react": "^5.2.1",
+    "@types/styled-components": "^5.1.21",
+    "@typescript-eslint/eslint-plugin": "^5.11.0",
+    "@typescript-eslint/parser": "^5.11.0",
+    "eslint": "^8.9.0",
+    "eslint-plugin-react": "^7.28.0",
+    "react-docgen-typescript-loader": "^3.7.2",
+    "webpack": "^5.67.0"
   }
 }

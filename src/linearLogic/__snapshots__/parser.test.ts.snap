@@ -1,0 +1,44 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`complex 1`] = `
+Object {
+  "children": Array [
+    Object {
+      "children": Array [
+        Object {
+          "children": Array [
+            Object {
+              "children": Array [
+                Object {
+                  "name": "var",
+                  "var": "A",
+                },
+                Object {
+                  "name": "var",
+                  "var": "B",
+                },
+              ],
+              "name": "binary",
+              "op": "tensor",
+            },
+          ],
+          "name": "unary",
+          "op": "ofCourse",
+        },
+        Object {
+          "name": "var",
+          "var": "C",
+        },
+      ],
+      "name": "binary",
+      "op": "and",
+    },
+    Object {
+      "name": "var",
+      "var": "D",
+    },
+  ],
+  "name": "binary",
+  "op": "or",
+}
+`;
