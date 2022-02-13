@@ -12,15 +12,17 @@ const ChildrenDiv = styled.div`
 
 export const DerivationContent = (props: {
   sequent: string;
-  children: ProofTree[];
+  childDerivs: ProofTree[];
 }) => {
   return (
     <div>
       <ChildrenDiv>
-        {props.children.map((c, idx) => (
+        {props.childDerivs.map((c, idx) => (
           <Derivation
             tree={c}
-            marginRight={idx !== props.children.length - 1}
+            marginRight={idx !== props.childDerivs.length - 1}
+            // TODO: FIXME!!!
+            key={idx}
           />
         ))}
       </ChildrenDiv>

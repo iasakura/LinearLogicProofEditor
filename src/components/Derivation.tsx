@@ -1,3 +1,4 @@
+import React from 'react';
 import styled, { css } from 'styled-components';
 import { ProofTree } from '../lib/ProofTree';
 import { DerivationContent } from './DerivationContent';
@@ -27,7 +28,7 @@ export const Derivation = (props: {
     <DerivationDiv marginRight={marginRight}>
       <DerivationContent
         sequent={props.tree.sequent}
-        children={props.tree.children}
+        childDerivs={props.tree.children}
       />
       <ProofRule rule={props.tree.rule} />
     </DerivationDiv>
