@@ -1,4 +1,4 @@
-import * as parser from '../../gen/parser';
+import * as parser from '../gen/parser';
 import { Formula } from './Formula';
 
 export const parse = (formula: string): Formula => {

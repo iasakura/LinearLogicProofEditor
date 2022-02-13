@@ -1,5 +1,7 @@
 {{
-  const opToName = (op) => {
+  import { Formula } from '../linearLogic/Formula';
+
+  const opToName = (op: string) => {
     if (op == '|') { return 'or'; }
     if (op == '@') { return 'par'; }
     if (op == '*') { return 'tensor'; }
@@ -11,19 +13,19 @@
 }}
 
 Formula
-  = f1:Formula1 _ op:("|" / "@") _ f2:Formula {
-      return { name: 'binary', op: opToName(op), children: [f1, f2] };
-    } /
-    f: Formula1 {
-      return f;
+  = f1:Formula1 fs:(_ op:("|" / "@") _ f2:Formula1)* {
+      return fs.reduce((formula: Formula, arg: [string, string, string, Formula]) => {
+        const [_1, op, _2, f] = arg;
+        return { name: 'binary', op: opToName(op), children: [formula, f] };
+      }, f1);
     }
 
 Formula1
-  = f1:Formula2 _ op:("*" / "&") _ f2:Formula1 {
-      return { name: 'binary', op: opToName(op), children: [f1, f2] };
-    } /
-    f: Formula2 {
-      return f;
+  = f1:Formula2 fs:(_ op:("&" / "*") _ f2:Formula2)* {
+    return fs.reduce((formula: Formula, arg: [string, string, string, Formula]) => {
+        const [_1, op, _2, f] = arg;
+        return { name: 'binary', op: opToName(op), children: [formula, f] };
+      }, f1);
     }
 
 Formula2

@@ -26,7 +26,7 @@
     "eject": "react-scripts eject",
     "storybook": "start-storybook -p 6006 -s public",
     "build-storybook": "build-storybook -s public",
-    "gen-parser": "./node_modules/.bin/peggy --plugin ./node_modules/ts-pegjs/src/tspegjs.js -o gen/parser.ts --cache src/linearLogic/parser.peggy"
+    "gen-parser": "./node_modules/.bin/peggy --plugin ./node_modules/ts-pegjs/src/tspegjs.js -o src/gen/parser.ts --cache src/linearLogic/parser.peggy"
   },
   "eslintConfig": {
     "extends": [
