@@ -1,9 +1,9 @@
 import React from 'react';
 import './App.css';
-import { ProofEditor } from './components/ProofEditor';
+import { ProofApp } from './components/ProofEditor';
 
 function App() {
-  return <ProofEditor />;
+  return <ProofApp />;
 }
 
 export default App;

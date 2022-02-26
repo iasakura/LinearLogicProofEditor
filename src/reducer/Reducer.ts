@@ -1,31 +1,47 @@
 import assert from 'assert';
 import React from 'react';
 import { Derivation, Loc } from '../derivation-tree';
-import { checkAxiomRule } from '../linearLogic/derivationRule';
-import { Formula, Sequent } from '../linearLogic/Formula';
+import {
+  applyAndRule,
+  applyContractionRule,
+  applyDerelictionRule,
+  applyOfCourseRule,
+  applyOr1Rule,
+  applyOr2Rule,
+  applyParRule,
+  applyTensorRule,
+  applyWeakeningRule,
+  checkAxiomRule,
+} from '../linearLogic/derivationRule';
+import { Sequent } from '../linearLogic/Formula';
 import { todo } from '../util';
 
-export type State =
+export type EditorState = {
+  proofState: ProofState;
+  errorState: ErrorState;
+};
+
+export type ErrorState =
+  | { name: 'showError'; msg: string }
+  | { name: 'noError' };
+
+export type ProofState =
+  | {
+      name: 'waitInput';
+    }
   | {
       name: 'showProof';
       proof: Derivation<Sequent>;
     }
   | {
-      name: 'showError';
-      msg: string;
-      proof: Derivation<Sequent>;
-    }
-  | {
-      // TODO
-      name: 'showModal';
-      proof: Derivation<Sequent>;
-      modalMenu: any;
-    }
-  | {
       name: 'complete';
     };
 
-export type Action =
+export type ProofAction =
+  | {
+      name: 'setSequent';
+      sequent: Sequent;
+    }
   | {
       name: 'applyAx';
       loc: Loc<Sequent>;
@@ -81,48 +97,133 @@ export type Action =
       pos: number;
     };
 
-export const reduce = (state: State, action: Action): State => {
-  if (state.name === 'showProof' || state.name === 'showError') {
+export type EditorAction = { name: 'proofAction'; action: ProofAction };
+
+const makeInitialTree = (formula: Sequent): Derivation<Sequent> => {
+  return {
+    children: 'open',
+    content: formula,
+    rule: '',
+  };
+};
+
+const applyRule = (
+  state: EditorState,
+  name: string,
+  loc: Loc<Sequent>,
+  pos: number
+): EditorState => {
+  const sequent = loc.tree.content;
+  const newSequents =
+    name === 'applyCut'
+      ? todo('implement')
+      : name === 'applyTimes'
+      ? applyTensorRule(sequent, pos)
+      : name === 'applyPar'
+      ? applyParRule(sequent, pos)
+      : name === 'applyWith'
+      ? applyAndRule(sequent, pos)
+      : name === 'applyPlus1'
+      ? applyOr1Rule(sequent, pos)
+      : name === 'applyPlus2'
+      ? applyOr2Rule(sequent, pos)
+      : name === 'applyOfCourse'
+      ? applyOfCourseRule(sequent, pos)
+      : name === 'applyWeakening'
+      ? applyWeakeningRule(sequent, pos)
+      : name === 'applyDereliction'
+      ? applyDerelictionRule(sequent, pos)
+      : name === 'applyContraction'
+      ? applyContractionRule(sequent, pos)
+      : undefined;
+
+  if (newSequents === undefined) {
+    return {
+      ...state,
+      errorState: {
+        name: 'showError',
+        msg: `Cannot apply ${name}`,
+      },
+    };
+  }
+
+  return {
+    ...state,
+    proofState: {
+      name: 'showProof',
+      proof: loc.replaceWith({
+        content: sequent,
+        /// Remove 'apply' at begin
+        rule: name.slice('apply'.length),
+        children: newSequents.map((seq) => {
+          return {
+            children: 'open',
+            rule: '',
+            content: seq,
+          };
+        }),
+      }),
+    },
+  };
+};
+
+const reduceProofState = (
+  state: EditorState,
+  action: ProofAction
+): EditorState => {
+  const { proofState } = state;
+
+  if (action.name === 'setSequent') {
+    return {
+      proofState: {
+        name: 'showProof',
+        proof: makeInitialTree(action.sequent),
+      },
+      errorState: {
+        name: 'noError',
+      },
+    };
+  }
+
+  if (proofState.name === 'showProof') {
+    const leaf = action.loc.tree;
+    assert(leaf.children === 'open');
+
     if (action.name === 'applyAx') {
-      const leaf = action.loc.tree;
-
-      assert(leaf.children === 'open');
-
       if (checkAxiomRule(leaf.content)) {
         return {
-          name: 'showProof',
-          proof: action.loc.replaceWith({
-            ...leaf,
-            children: [],
-          }),
+          ...state,
+          proofState: {
+            name: 'showProof',
+            proof: action.loc.replaceWith({
+              content: leaf.content,
+              rule: 'Ax',
+              children: [],
+            }),
+          },
         };
       } else {
         return {
-          name: 'showError',
-          msg: 'Cannot apply Ax',
-          proof: state.proof,
+          ...state,
+          errorState: {
+            name: 'showError',
+            msg: 'Cannot apply Ax',
+          },
         };
       }
-    } else if (action.name === 'applyCut') {
-      return todo('implement');
-    } else if (action.name === 'applyTimes') {
-      return todo('implement');
-    } else if (action.name === 'applyPar') {
-      return todo('implement');
-    } else if (action.name === 'applyWith') {
-      return todo('implement');
-    } else if (action.name === 'applyPlus1') {
-      return todo('implement');
-    } else if (action.name === 'applyPlus2') {
-      return todo('implement');
-    } else if (action.name === 'applyOfCourse') {
-      return todo('implement');
-    } else if (action.name === 'applyWeakening') {
-      return todo('implement');
-    } else if (action.name === 'applyDereliction') {
-      return todo('implement');
-    } else if (action.name === 'applyContraction') {
-      return todo('implement');
+    } else if (
+      action.name === 'applyCut' ||
+      action.name === 'applyTimes' ||
+      action.name === 'applyPar' ||
+      action.name === 'applyWith' ||
+      action.name === 'applyPlus1' ||
+      action.name === 'applyPlus2' ||
+      action.name === 'applyOfCourse' ||
+      action.name === 'applyWeakening' ||
+      action.name === 'applyDereliction' ||
+      action.name === 'applyContraction'
+    ) {
+      return applyRule(state, action.name, action.loc, action.pos);
     } else {
       // never
       return action;
@@ -131,3 +232,20 @@ export const reduce = (state: State, action: Action): State => {
     return todo('implement');
   }
 };
+
+export const reduce = (
+  state: EditorState,
+  action: EditorAction
+): EditorState => {
+  if (action.name === 'proofAction') {
+    return reduceProofState(state, action.action);
+  } else {
+    // never
+    return action.name;
+  }
+};
+
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export const DispatcherContext = React.createContext((action: EditorAction) => {
+  return;
+});

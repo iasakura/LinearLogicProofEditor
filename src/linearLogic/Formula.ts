@@ -9,9 +9,9 @@ export type Formula =
 
 export type Sequent = Formula[];
 
-type opName = 'not' | 'ofCourse' | 'whyNot' | 'and' | 'or' | 'par' | 'tensor';
+export type OpName = 'not' | 'ofCourse' | 'whyNot' | 'and' | 'or' | 'par' | 'tensor';
 
-const opPrecedence = (op: opName): number => {
+const opPrecedence = (op: OpName): number => {
   if (op == 'or' || op == 'par') {
     return 0;
   } else if (op == 'and' || op == 'tensor') {
@@ -24,7 +24,7 @@ const opPrecedence = (op: opName): number => {
   }
 };
 
-export const opToString = (op: opName) => {
+export const opToString = (op: OpName) => {
   if (op == 'not') {
     return '￢';
   } else if (op == 'ofCourse') {

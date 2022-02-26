@@ -69,6 +69,6 @@ export class Loc<T> {
   }
 }
 
-export function top<T>(tree: Derivation<T>): Loc<T> {
+export function makeTop<T>(tree: Derivation<T>): Loc<T> {
   return new Loc<T>({ name: 'top' }, tree);
 }

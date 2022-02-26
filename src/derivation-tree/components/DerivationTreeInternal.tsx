@@ -1,6 +1,6 @@
 import React, { ReactElement } from 'react';
 import styled, { css } from 'styled-components';
-import { Derivation } from '../lib/Derivation';
+import { Derivation, Loc } from '../lib/Derivation';
 import { DerivationContent } from './DerivationContent';
 
 const DerivationDiv = styled.div`
@@ -28,7 +28,8 @@ const ProofRule = (props: { rule: string }) => {
 export function DerivationTreeInternal<T>(props: {
   tree: Derivation<T>;
   marginRight?: boolean;
-  renderLeaf: (leaf: T) => ReactElement;
+  loc: Loc<T>;
+  renderLeaf: (leaf: T, loc: Loc<T>) => ReactElement;
 }) {
   const marginRight =
     props.marginRight === undefined ? false : props.marginRight;
@@ -43,6 +44,7 @@ export function DerivationTreeInternal<T>(props: {
         childDerivs={childDerivs}
         renderLeaf={props.renderLeaf}
         open={open}
+        loc={props.loc}
       />
       <ProofRule rule={props.tree.rule} />
     </DerivationDiv>

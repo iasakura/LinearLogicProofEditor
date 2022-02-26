@@ -2,20 +2,18 @@ import React, { ReactElement } from 'react';
 import styled from 'styled-components';
 import { Sequent } from '../linearLogic/Formula';
 import { parseSequent } from '../linearLogic/parser';
-import { DerivationTree, Derivation } from '../derivation-tree';
+import { DerivationTree, Derivation, Loc } from '../derivation-tree';
 import { LLSequent } from './LLSequent';
+import {
+  reduce,
+  EditorState,
+  EditorAction,
+  DispatcherContext,
+} from '../reducer/Reducer';
 
-function renderLeaf(formula: Sequent): ReactElement {
-  return <LLSequent sequent={formula} />;
-}
-
-function makeInitialTree(formula: Sequent): Derivation<Sequent> {
-  return {
-    children: [],
-    content: formula,
-    rule: '',
-  };
-}
+const renderLeaf = (formula: Sequent, loc: Loc<Sequent>): ReactElement => {
+  return <LLSequent sequent={formula} loc={loc} />;
+};
 
 const ContainerDiv = styled.div`
   background: #eee;
@@ -31,16 +29,36 @@ const ProofEditorDiv = styled.div`
   transform: translate(-50%); ;
 `;
 
-export const ProofEditor = () => {
-  const [input, setInput] = React.useState<string>('');
-  const [proofTree, setProofTree] =
-    React.useState<Derivation<Sequent> | undefined>();
+const ProofEditor = (props: { proof: Derivation<Sequent> }) => {
+  return (
+    <ContainerDiv>
+      <ProofEditorDiv>
+        <DerivationTree proof={props.proof} renderLeaf={renderLeaf} />
+      </ProofEditorDiv>
+    </ContainerDiv>
+  );
+};
+
+export const ProofApp = () => {
+  const [input, setInput] = React.useState('');
+
+  const [state, dispatch] = React.useReducer(reduce, {
+    proofState: {
+      name: 'waitInput',
+    },
+    errorState: { name: 'noError' },
+  });
 
   const handleSubmit = (ev: React.FormEvent<HTMLFormElement>) => {
     ev.preventDefault();
 
-    const sequent = parseSequent(input);
-    setProofTree(makeInitialTree(sequent));
+    dispatch({
+      name: 'proofAction',
+      action: {
+        name: 'setSequent',
+        sequent: parseSequent(input),
+      },
+    });
   };
 
   const handleInputChange = (ev: React.ChangeEvent<HTMLInputElement>) => {
@@ -62,13 +80,13 @@ export const ProofEditor = () => {
         <input type="submit" value="Start" />
       </form>
 
-      <ContainerDiv>
-        <ProofEditorDiv>
-          {proofTree !== undefined && (
-            <DerivationTree proof={proofTree} renderLeaf={renderLeaf} />
-          )}
-        </ProofEditorDiv>
-      </ContainerDiv>
+      <DispatcherContext.Provider value={dispatch}>
+        {state.proofState.name === 'showProof' ? (
+          <ProofEditor proof={state.proofState.proof} />
+        ) : undefined}
+      </DispatcherContext.Provider>
+
+      {state.errorState.name === 'showError' ? state.errorState.msg : undefined}
     </div>
   );
 };

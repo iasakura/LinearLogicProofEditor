@@ -1,6 +1,6 @@
 import React, { ReactElement } from 'react';
 import styled from 'styled-components';
-import { Derivation } from '../lib/Derivation';
+import { Derivation, Loc } from '../lib/Derivation';
 import { DerivationTreeInternal } from './DerivationTreeInternal';
 import { DerivationNode } from './DerivationNode';
 
@@ -13,8 +13,9 @@ const ChildrenDiv = styled.div`
 export function DerivationContent<T>(props: {
   sequent: T;
   childDerivs: Derivation<T>[];
-  renderLeaf: (leaf: T) => ReactElement;
+  renderLeaf: (leaf: T, loc: Loc<T>) => ReactElement;
   open: boolean;
+  loc: Loc<T>;
 }) {
   return (
     <div>
@@ -26,6 +27,7 @@ export function DerivationContent<T>(props: {
             // TODO: FIXME!!!
             key={idx}
             renderLeaf={props.renderLeaf}
+            loc={props.loc.go(idx)}
           />
         ))}
       </ChildrenDiv>
@@ -33,6 +35,7 @@ export function DerivationContent<T>(props: {
         node={props.sequent}
         renderLeaf={props.renderLeaf}
         open={props.open}
+        loc={props.loc}
       />
     </div>
   );
