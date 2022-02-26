@@ -24,9 +24,9 @@ const opPrecedence = (op: opName): number => {
   }
 };
 
-const opToString = (op: opName) => {
+export const opToString = (op: opName) => {
   if (op == 'not') {
-    return '~';
+    return '￢';
   } else if (op == 'ofCourse') {
     return '!';
   } else if (op == 'whyNot') {
@@ -34,11 +34,11 @@ const opToString = (op: opName) => {
   } else if (op == 'and') {
     return '&';
   } else if (op == 'or') {
-    return '|';
+    return '⊕';
   } else if (op == 'par') {
-    return '@';
+    return '⅋';
   } else if (op == 'tensor') {
-    return '*';
+    return '⊗';
   } else {
     // never
     return op;

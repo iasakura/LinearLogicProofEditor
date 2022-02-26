@@ -1,62 +1,62 @@
 import { storiesOf } from '@storybook/react';
 import React, { Children } from 'react';
-import { ProofTree } from '../lib/ProofTree';
-import { Proof } from './Proof';
-import { Sequent } from './Sequent';
+import { Derivation } from '../lib/Derivation';
+import { DerivationTree } from './DerivationTree';
+import { DerivationNode } from './DerivationNode';
 
 export default {
   title: 'Proof Example',
 };
 
-const proof: ProofTree = {
+const proof: Derivation<string> = {
   rule: 'rule',
-  sequent: 'aaaaaaaa',
+  content: 'aaaaaaaa',
   children: [
     {
       rule: 'rule2',
-      sequent: 'child1',
+      content: 'child1',
       children: [
         {
           rule: 'rule5',
-          sequent: 'this is toooooooo long',
+          content: 'this is toooooooo long',
           children: [
             {
               rule: 'rule-a',
-              sequent: 'a',
+              content: 'a',
               children: [],
             },
             {
               rule: 'rule-b',
-              sequent: 'b',
+              content: 'b',
               children: [],
             },
             {
               rule: 'rule-c',
-              sequent: 'c',
+              content: 'c',
               children: [],
             },
           ],
         },
         {
           rule: 'rule2',
-          sequent: 'grandchild2',
+          content: 'grandchild2',
           children: [],
         },
       ],
     },
     {
       rule: 'rule3',
-      sequent: 'child2',
+      content: 'child2',
       children: [],
     },
     {
       rule: 'rule3',
-      sequent: 'child3',
+      content: 'child3',
       children: [],
     },
   ],
 };
 
 export const ProofStory = () => {
-  return <Proof proof={proof} />;
+  return <DerivationTree proof={proof} renderLeaf={(s) => <span>{s}</span>} />;
 };

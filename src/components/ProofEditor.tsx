@@ -1,41 +1,46 @@
-import React from 'react';
+import React, { ReactElement } from 'react';
 import styled from 'styled-components';
-import { ProofTree } from '../lib/ProofTree';
-import { Formula, formulaToString } from '../linearLogic/Formula';
-import { parse } from '../linearLogic/parser';
-import { Proof } from './Proof';
+import { Sequent } from '../linearLogic/Formula';
+import { parseSequent } from '../linearLogic/parser';
+import { DerivationTree, Derivation } from '../derivation-tree';
+import { LLSequent } from './LLSequent';
 
-function makeInitialTree(formula: Formula): ProofTree {
+function renderLeaf(formula: Sequent): ReactElement {
+  return <LLSequent sequent={formula} />;
+}
+
+function makeInitialTree(formula: Sequent): Derivation<Sequent> {
   return {
-    sequent: formulaToString(formula),
-    rule: '?',
     children: [],
+    content: formula,
+    rule: '',
   };
 }
 
+const ContainerDiv = styled.div`
+  background: #eee;
+  position: relative;
+  height: 1200px;
+  height: 400px;
+`;
+
+const ProofEditorDiv = styled.div`
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translate(-50%); ;
+`;
+
 export const ProofEditor = () => {
   const [input, setInput] = React.useState<string>('');
-  const [proofTree, setProofTree] = React.useState<ProofTree | undefined>();
-
-  const ContainerDiv = styled.div`
-    background: #EEE;
-    position: relative;
-    height: 1200px;
-    height: 400px;
-  `;
-
-  const ProofEditorDiv = styled.div`
-    position: absolute;
-    bottom: 0;
-    left: 50%;
-    transform: translate(-50%); ;
-  `;
+  const [proofTree, setProofTree] =
+    React.useState<Derivation<Sequent> | undefined>();
 
   const handleSubmit = (ev: React.FormEvent<HTMLFormElement>) => {
     ev.preventDefault();
 
-    const tree = parse(input);
-    setProofTree(makeInitialTree(tree));
+    const sequent = parseSequent(input);
+    setProofTree(makeInitialTree(sequent));
   };
 
   const handleInputChange = (ev: React.ChangeEvent<HTMLInputElement>) => {
@@ -47,7 +52,7 @@ export const ProofEditor = () => {
     <div>
       <form onSubmit={(ev) => handleSubmit(ev)}>
         <label>
-          Sequent:
+          Sequent: |-
           <input
             type="text"
             value={input}
@@ -59,7 +64,9 @@ export const ProofEditor = () => {
 
       <ContainerDiv>
         <ProofEditorDiv>
-          {proofTree !== undefined && <Proof proof={proofTree} />}
+          {proofTree !== undefined && (
+            <DerivationTree proof={proofTree} renderLeaf={renderLeaf} />
+          )}
         </ProofEditorDiv>
       </ContainerDiv>
     </div>
