@@ -1,9 +1,11 @@
 import assert from 'assert';
+import * as uuid from 'uuid';
 
 export type Derivation<T> = {
   children: Derivation<T>[] | 'open';
   content: T;
   rule: string;
+  key: string;
 };
 
 type DerivationCtx<T> =
@@ -15,6 +17,7 @@ type DerivationCtx<T> =
       parent: DerivationCtx<T>;
       content: T;
       rule: string;
+      key: string;
     }
   | {
       name: 'top';
@@ -40,6 +43,7 @@ export class Loc<T> {
         parent: this.ctx,
         content: this.tree.content,
         rule: this.tree.rule,
+        key: this.tree.key,
       },
       tree
     );
@@ -52,6 +56,7 @@ export class Loc<T> {
       children: this.ctx.left.concat(this.tree, ...this.ctx.right),
       content: this.ctx.content,
       rule: this.ctx.rule,
+      key: this.ctx.key,
     });
   }
 
@@ -63,6 +68,7 @@ export class Loc<T> {
         children: this.ctx.left.concat(new_, ...this.ctx.right),
         content: this.ctx.content,
         rule: this.ctx.rule,
+        key: uuid.v4(),
       };
       return this.up().replaceWith(new_tree);
     }

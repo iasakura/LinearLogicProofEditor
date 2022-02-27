@@ -15,6 +15,7 @@ import {
 } from '../linearLogic/derivationRule';
 import { Sequent } from '../linearLogic/Formula';
 import { todo } from '../util';
+import * as uuid from 'uuid';
 
 export type EditorState = {
   proofState: ProofState;
@@ -110,6 +111,7 @@ const makeInitialTree = (formula: Sequent): Derivation<Sequent> => {
     children: 'open',
     content: formula,
     rule: '',
+    key: uuid.v4(),
   };
 };
 
@@ -166,8 +168,10 @@ const applyRule = (
             children: 'open',
             rule: '',
             content: seq,
+            key: uuid.v4(),
           };
         }),
+        key: uuid.v4(),
       }),
     },
   };
@@ -227,6 +231,7 @@ const applyMove = (
         content: newSequent,
         rule,
         children,
+        key: uuid.v4(),
       }),
     },
   };
@@ -264,6 +269,7 @@ const reduceProofState = (
               content: leaf.content,
               rule: 'Ax',
               children: [],
+              key: uuid.v4(),
             }),
           },
         };

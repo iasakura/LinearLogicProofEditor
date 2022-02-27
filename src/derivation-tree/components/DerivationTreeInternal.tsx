@@ -45,6 +45,7 @@ export function DerivationTreeInternal<T>(props: {
         renderLeaf={props.renderLeaf}
         open={open}
         loc={props.loc}
+        key={props.tree.key}
       />
       <ProofRule rule={props.tree.rule} />
     </DerivationDiv>

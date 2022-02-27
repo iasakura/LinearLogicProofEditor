@@ -7,12 +7,7 @@ import { Sequent } from '../linearLogic/Formula';
 import { parseSequent } from '../linearLogic/parser';
 import { DerivationTree, Derivation, Loc } from '../derivation-tree';
 import { LLSequent } from './LLSequent';
-import {
-  reduce,
-  EditorState,
-  EditorAction,
-  DispatcherContext,
-} from '../reducer/Reducer';
+import { reduce, DispatcherContext } from '../reducer/Reducer';
 
 const renderLeaf = (formula: Sequent, loc: Loc<Sequent>): ReactElement => {
   return <LLSequent sequent={formula} loc={loc} />;

@@ -24,37 +24,46 @@ const proof: Derivation<string> = {
               rule: 'rule-a',
               content: 'a',
               children: [],
+              key: '1',
             },
             {
               rule: 'rule-b',
               content: 'b',
               children: [],
+              key: '2',
             },
             {
               rule: 'rule-c',
               content: 'c',
               children: [],
+              key: '3',
             },
           ],
+          key: '8',
         },
         {
           rule: 'rule2',
           content: 'grandchild2',
           children: [],
+          key: '4',
         },
       ],
+      key: '9',
     },
     {
       rule: 'rule3',
       content: 'child2',
       children: [],
+      key: '5',
     },
     {
       rule: 'rule3',
       content: 'child3',
       children: [],
+      key: '6',
     },
   ],
+  key: '10',
 };
 
 export const ProofStory = () => {

@@ -1,15 +1,23 @@
-export type Formula =
+export type Formula = (
   | { name: 'var'; var: string }
   | { name: 'unary'; op: 'not' | 'ofCourse' | 'whyNot'; children: [Formula] }
   | {
       name: 'binary';
       op: 'and' | 'or' | 'par' | 'tensor';
       children: [Formula, Formula];
-    };
+    }
+) & { key: string };
 
 export type Sequent = Formula[];
 
-export type OpName = 'not' | 'ofCourse' | 'whyNot' | 'and' | 'or' | 'par' | 'tensor';
+export type OpName =
+  | 'not'
+  | 'ofCourse'
+  | 'whyNot'
+  | 'and'
+  | 'or'
+  | 'par'
+  | 'tensor';
 
 const opPrecedence = (op: OpName): number => {
   if (op == 'or' || op == 'par') {

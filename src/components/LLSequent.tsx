@@ -174,7 +174,7 @@ export const LLSequent = (props: { sequent: Sequent; loc: Loc<Sequent> }) => {
               text={idx > 0 ? ', ' : '\u00a0'.repeat(4)}
               pos={idx}
             />
-            <LLFormula formula={f} loc={props.loc} pos={idx} />
+            <LLFormula formula={f} loc={props.loc} pos={idx} key={f.key} />
             {idx === props.sequent.length - 1 ? (
               <DroppableSpace pos={idx + 1} text={'\u00a0'.repeat(4)} />
             ) : undefined}

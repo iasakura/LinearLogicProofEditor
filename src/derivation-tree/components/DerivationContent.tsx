@@ -16,6 +16,7 @@ export function DerivationContent<T>(props: {
   renderLeaf: (leaf: T, loc: Loc<T>) => ReactElement;
   open: boolean;
   loc: Loc<T>;
+  key: string;
 }) {
   return (
     <div>
@@ -24,10 +25,9 @@ export function DerivationContent<T>(props: {
           <DerivationTreeInternal
             tree={c}
             marginRight={idx !== props.childDerivs.length - 1}
-            // TODO: FIXME!!!
-            key={idx}
             renderLeaf={props.renderLeaf}
             loc={props.loc.go(idx)}
+            key={props.key}
           />
         ))}
       </ChildrenDiv>
