@@ -1,4 +1,7 @@
 import React, { ReactElement } from 'react';
+import { DndProvider } from 'react-dnd';
+import { HTML5Backend } from 'react-dnd-html5-backend';
+
 import styled from 'styled-components';
 import { Sequent } from '../linearLogic/Formula';
 import { parseSequent } from '../linearLogic/parser';
@@ -67,26 +70,30 @@ export const ProofApp = () => {
   };
 
   return (
-    <div>
-      <form onSubmit={(ev) => handleSubmit(ev)}>
-        <label>
-          Sequent: |-
-          <input
-            type="text"
-            value={input}
-            onChange={(ev) => handleInputChange(ev)}
-          />
-        </label>
-        <input type="submit" value="Start" />
-      </form>
+    <DndProvider backend={HTML5Backend}>
+      <div>
+        <form onSubmit={(ev) => handleSubmit(ev)}>
+          <label>
+            Sequent: |-
+            <input
+              type="text"
+              value={input}
+              onChange={(ev) => handleInputChange(ev)}
+            />
+          </label>
+          <input type="submit" value="Start" />
+        </form>
 
-      <DispatcherContext.Provider value={dispatch}>
-        {state.proofState.name === 'showProof' ? (
-          <ProofEditor proof={state.proofState.proof} />
-        ) : undefined}
-      </DispatcherContext.Provider>
+        <DispatcherContext.Provider value={dispatch}>
+          {state.proofState.name === 'showProof' ? (
+            <ProofEditor proof={state.proofState.proof} />
+          ) : undefined}
+        </DispatcherContext.Provider>
 
-      {state.errorState.name === 'showError' ? state.errorState.msg : undefined}
-    </div>
+        {state.errorState.name === 'showError'
+          ? state.errorState.msg
+          : undefined}
+      </div>
+    </DndProvider>
   );
 };

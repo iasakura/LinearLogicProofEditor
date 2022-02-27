@@ -43,6 +43,12 @@ export type ProofAction =
       sequent: Sequent;
     }
   | {
+      name: 'moveFormula';
+      loc: Loc<Sequent>;
+      from: number;
+      to: number;
+    }
+  | {
       name: 'applyAx';
       loc: Loc<Sequent>;
     }
@@ -167,6 +173,65 @@ const applyRule = (
   };
 };
 
+const applyMove = (
+  state: EditorState,
+  loc: Loc<Sequent>,
+  from: number,
+  to: number
+): EditorState => {
+  if (state.proofState.name !== 'showProof') {
+    return {
+      ...state,
+      errorState: {
+        name: 'showError',
+        msg: 'Invalid move',
+      },
+    };
+  }
+
+  const rule = loc.tree.rule;
+  const children = loc.tree.children;
+  const sequent = loc.tree.content;
+
+  if (children !== 'open') {
+    return {
+      ...state,
+      errorState: {
+        name: 'showError',
+        msg: 'Invalid move',
+      },
+    };
+  }
+
+  const left = sequent.slice(0, from);
+  const target = sequent[from];
+  const right = sequent.slice(from + 1);
+
+  let newSequent;
+  if (to < from) {
+    const left1 = left.slice(0, to);
+    const left2 = left.slice(to);
+    newSequent = left1.concat(target, ...left2, ...right);
+  } else {
+    to -= from + 1;
+    const right1 = right.slice(0, to);
+    const right2 = right.slice(to);
+    newSequent = left.concat(...right1, target, ...right2);
+  }
+
+  return {
+    ...state,
+    proofState: {
+      name: 'showProof',
+      proof: loc.replaceWith({
+        content: newSequent,
+        rule,
+        children,
+      }),
+    },
+  };
+};
+
 const reduceProofState = (
   state: EditorState,
   action: ProofAction
@@ -224,6 +289,8 @@ const reduceProofState = (
       action.name === 'applyContraction'
     ) {
       return applyRule(state, action.name, action.loc, action.pos);
+    } else if (action.name === 'moveFormula') {
+      return applyMove(state, action.loc, action.from, action.to);
     } else {
       // never
       return action;
