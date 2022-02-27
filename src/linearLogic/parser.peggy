@@ -8,7 +8,7 @@
     if (op == '&') { return 'and'; }
     if (op == '~') { return 'not'; }
     if (op == '!') { return 'ofCourse'; }
-    if (op == '?') { return 'whiNot'; }
+    if (op == '?') { return 'whyNot'; }
   }
 }}
 

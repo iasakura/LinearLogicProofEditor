@@ -1,4 +1,5 @@
 import { Formula, Sequent } from './Formula';
+import * as UUID from 'uuid';
 
 export const checkAxiomRule = (s: Sequent): boolean => {
   if (s.length !== 2) {
@@ -33,7 +34,7 @@ const splitAt = (
     return undefined;
   }
 
-  return [s.slice(0, pos), s[pos], s.slice(pos+1)];
+  return [s.slice(0, pos), s[pos], s.slice(pos + 1)];
 };
 
 const childOfBin = (op: string, f: Formula): [Formula, Formula] | undefined => {
@@ -61,6 +62,90 @@ const catchEscape = (e: unknown): undefined => {
     return undefined;
   } else {
     throw e;
+  }
+};
+
+const computeNot = (f: Formula): Formula => {
+  if (f.name === 'var') {
+    return {
+      name: 'unary',
+      op: 'not',
+      children: [f],
+      key: UUID.v4(),
+    };
+  } else if (f.name === 'unary') {
+    if (f.op === 'not') {
+      return f.children[0];
+    } else if (f.op === 'ofCourse') {
+      return {
+        name: 'unary',
+        op: 'whyNot',
+        children: [computeNot(f.children[0])],
+        key: UUID.v4(),
+      };
+    } else if (f.op === 'whyNot') {
+      return {
+        name: 'unary',
+        op: 'ofCourse',
+        children: [computeNot(f.children[0])],
+        key: UUID.v4(),
+      };
+    } else {
+      // never
+      return f.op;
+    }
+  } else if (f.name === 'binary') {
+    if (f.op === 'and') {
+      return {
+        name: 'binary',
+        op: 'or',
+        children: [computeNot(f.children[0]), computeNot(f.children[1])],
+        key: UUID.v4(),
+      };
+    } else if (f.op === 'or') {
+      return {
+        name: 'binary',
+        op: 'and',
+        children: [computeNot(f.children[0]), computeNot(f.children[1])],
+        key: UUID.v4(),
+      };
+    } else if (f.op === 'tensor') {
+      return {
+        name: 'binary',
+        op: 'par',
+        children: [computeNot(f.children[0]), computeNot(f.children[1])],
+        key: UUID.v4(),
+      };
+    } else if (f.op === 'par') {
+      return {
+        name: 'binary',
+        op: 'tensor',
+        children: [computeNot(f.children[0]), computeNot(f.children[1])],
+        key: UUID.v4(),
+      };
+    } else {
+      // never
+      return f.op;
+    }
+  } else {
+    // never
+    return f;
+  }
+};
+
+export const applyCutRule = (
+  s: Sequent,
+  pos: number,
+  c: Formula
+): Sequent[] | undefined => {
+  try {
+    const left = s.slice(0, pos);
+    const right = s.slice(pos + 1);
+    const not_c = computeNot(c);
+
+    return [left.concat(c), [not_c].concat(right)];
+  } catch (e) {
+    return catchEscape(e);
   }
 };
 

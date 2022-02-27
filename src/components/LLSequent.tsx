@@ -40,13 +40,11 @@ const opNameToActionName = (op: OpName) => {
   if (op === 'ofCourse') {
     return 'applyOfCourse';
   } else if (op === 'whyNot') {
-    // TODO: other cases
-    return 'applyDereliction';
+    return 'showWhyNotModal';
   } else if (op === 'and') {
     return 'applyWith';
   } else if (op === 'or') {
-    // TODO: other cases
-    return 'applyPlus1';
+    return 'showPlusModal';
   } else if (op === 'par') {
     return 'applyPar';
   } else if (op === 'tensor') {
@@ -164,7 +162,25 @@ const LLFormula = (props: {
   }
 };
 
+const handleCommaClick = (
+  dispatch: (action: EditorAction) => void,
+  loc: Loc<Sequent>,
+  pos: number
+) => {
+  return () => {
+    dispatch({
+      name: 'proofAction',
+      action: {
+        name: 'showCutModal',
+        loc,
+        pos,
+      },
+    });
+  };
+};
+
 export const LLSequent = (props: { sequent: Sequent; loc: Loc<Sequent> }) => {
+  const dispatch = React.useContext(DispatcherContext);
   return (
     <span>
       {props.sequent.map((f, idx) => {
@@ -173,10 +189,15 @@ export const LLSequent = (props: { sequent: Sequent; loc: Loc<Sequent> }) => {
             <DroppableSpace
               text={idx > 0 ? ', ' : '\u00a0'.repeat(4)}
               pos={idx}
+              onClick={handleCommaClick(dispatch, props.loc, idx)}
             />
             <LLFormula formula={f} loc={props.loc} pos={idx} key={f.key} />
             {idx === props.sequent.length - 1 ? (
-              <DroppableSpace pos={idx + 1} text={'\u00a0'.repeat(4)} />
+              <DroppableSpace
+                pos={idx + 1}
+                text={'\u00a0'.repeat(4)}
+                onClick={handleCommaClick(dispatch, props.loc, idx + 1)}
+              />
             ) : undefined}
           </>
         );

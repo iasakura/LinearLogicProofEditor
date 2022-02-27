@@ -1,4 +1,5 @@
 import React, { ReactElement } from 'react';
+import Modal from 'react-modal';
 import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 
@@ -8,6 +9,7 @@ import { parseSequent } from '../linearLogic/parser';
 import { DerivationTree, Derivation, Loc } from '../derivation-tree';
 import { LLSequent } from './LLSequent';
 import { reduce, DispatcherContext } from '../reducer/Reducer';
+import { DetailInputForm } from './DetailInputForm';
 
 const renderLeaf = (formula: Sequent, loc: Loc<Sequent>): ReactElement => {
   return <LLSequent sequent={formula} loc={loc} />;
@@ -66,29 +68,51 @@ export const ProofApp = () => {
 
   return (
     <DndProvider backend={HTML5Backend}>
-      <div>
-        <form onSubmit={(ev) => handleSubmit(ev)}>
-          <label>
-            Sequent: |-
-            <input
-              type="text"
-              value={input}
-              onChange={(ev) => handleInputChange(ev)}
-            />
-          </label>
-          <input type="submit" value="Start" />
-        </form>
+      <DispatcherContext.Provider value={dispatch}>
+        <div>
+          <form onSubmit={(ev) => handleSubmit(ev)}>
+            <label>
+              Sequent: |-
+              <input
+                type="text"
+                value={input}
+                onChange={(ev) => handleInputChange(ev)}
+              />
+            </label>
+            <input type="submit" value="Start" />
+          </form>
 
-        <DispatcherContext.Provider value={dispatch}>
-          {state.proofState.name === 'showProof' ? (
+          {state.proofState.name === 'showProof' ||
+          state.proofState.name === 'showModal' ||
+          state.proofState.name === 'complete' ? (
             <ProofEditor proof={state.proofState.proof} />
           ) : undefined}
-        </DispatcherContext.Provider>
 
-        {state.errorState.name === 'showError'
-          ? state.errorState.msg
-          : undefined}
-      </div>
+          <Modal
+            isOpen={state.proofState.name === 'showModal'}
+            onRequestClose={() => {
+              dispatch({
+                name: 'proofAction',
+                action: {
+                  name: 'closeModal',
+                },
+              });
+            }}
+          >
+            {state.proofState.name === 'showModal' && (
+              <DetailInputForm
+                type={state.proofState.modalType}
+                loc={state.proofState.loc}
+                pos={state.proofState.pos}
+              />
+            )}
+          </Modal>
+
+          {state.errorState.name === 'showError'
+            ? state.errorState.msg
+            : undefined}
+        </div>
+      </DispatcherContext.Provider>
     </DndProvider>
   );
 };

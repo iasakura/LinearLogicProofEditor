@@ -11,7 +11,11 @@ const DroppableSpan = styled.span<{ isOver: boolean }>`
   ${({ isOver }) => isOver && 'background-color: aqua'}
 `;
 
-export const DroppableSpace = (props: { text: string; pos: number }) => {
+export const DroppableSpace = (props: {
+  text: string;
+  pos: number;
+  onClick: () => void;
+}) => {
   const [{ isOver }, drop] = useDrop(() => ({
     accept: ItemType,
     drop: (): DropResult => {
@@ -26,7 +30,7 @@ export const DroppableSpace = (props: { text: string; pos: number }) => {
 
   const text = props.text || '';
   return (
-    <DroppableSpan ref={drop} isOver={isOver}>
+    <DroppableSpan ref={drop} isOver={isOver} onClick={props.onClick}>
       {text}
     </DroppableSpan>
   );

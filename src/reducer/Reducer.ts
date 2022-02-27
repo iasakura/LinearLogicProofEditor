@@ -4,6 +4,7 @@ import { Derivation, Loc } from '../derivation-tree';
 import {
   applyAndRule,
   applyContractionRule,
+  applyCutRule,
   applyDerelictionRule,
   applyOfCourseRule,
   applyOr1Rule,
@@ -13,7 +14,7 @@ import {
   applyWeakeningRule,
   checkAxiomRule,
 } from '../linearLogic/derivationRule';
-import { Sequent } from '../linearLogic/Formula';
+import { Formula, Sequent } from '../linearLogic/Formula';
 import { todo } from '../util';
 import * as uuid from 'uuid';
 
@@ -35,7 +36,15 @@ export type ProofState =
       proof: Derivation<Sequent>;
     }
   | {
+      name: 'showModal';
+      modalType: 'whyNot' | 'plus' | 'cut';
+      proof: Derivation<Sequent>;
+      loc: Loc<Sequent>;
+      pos: number;
+    }
+  | {
       name: 'complete';
+      proof: Derivation<Sequent>;
     };
 
 export type ProofAction =
@@ -57,6 +66,7 @@ export type ProofAction =
       name: 'applyCut';
       loc: Loc<Sequent>;
       pos: number;
+      cutFormula: Formula;
     }
   | {
       name: 'applyTimes';
@@ -102,6 +112,24 @@ export type ProofAction =
       name: 'applyContraction';
       loc: Loc<Sequent>;
       pos: number;
+    }
+  | {
+      name: 'showWhyNotModal';
+      loc: Loc<Sequent>;
+      pos: number;
+    }
+  | {
+      name: 'showPlusModal';
+      loc: Loc<Sequent>;
+      pos: number;
+    }
+  | {
+      name: 'showCutModal';
+      loc: Loc<Sequent>;
+      pos: number;
+    }
+  | {
+      name: 'closeModal';
     };
 
 export type EditorAction = { name: 'proofAction'; action: ProofAction };
@@ -115,6 +143,39 @@ const makeInitialTree = (formula: Sequent): Derivation<Sequent> => {
   };
 };
 
+const applyCut = (
+  state: EditorState,
+  loc: Loc<Sequent>,
+  pos: number,
+  cutFormula: Formula
+): EditorState => {
+  const sequent = loc.tree.content;
+  const newSequents = applyCutRule(sequent, pos, cutFormula);
+
+  assert(newSequents !== undefined);
+
+  return {
+    ...state,
+    proofState: {
+      name: 'showProof',
+      proof: loc.replaceWith({
+        content: sequent,
+        /// Remove 'apply' at begin
+        rule: 'Cut',
+        children: newSequents.map((seq) => {
+          return {
+            children: 'open',
+            rule: '',
+            content: seq,
+            key: uuid.v4(),
+          };
+        }),
+        key: uuid.v4(),
+      }),
+    },
+  };
+};
+
 const applyRule = (
   state: EditorState,
   name: string,
@@ -123,9 +184,7 @@ const applyRule = (
 ): EditorState => {
   const sequent = loc.tree.content;
   const newSequents =
-    name === 'applyCut'
-      ? todo('implement')
-      : name === 'applyTimes'
+    name === 'applyTimes'
       ? applyTensorRule(sequent, pos)
       : name === 'applyPar'
       ? applyParRule(sequent, pos)
@@ -255,18 +314,15 @@ const reduceProofState = (
     };
   }
 
-  if (proofState.name === 'showProof') {
-    const leaf = action.loc.tree;
-    assert(leaf.children === 'open');
-
+  if (proofState.name === 'showProof' || proofState.name === 'showModal') {
     if (action.name === 'applyAx') {
-      if (checkAxiomRule(leaf.content)) {
+      if (checkAxiomRule(action.loc.tree.content)) {
         return {
           ...state,
           proofState: {
             name: 'showProof',
             proof: action.loc.replaceWith({
-              content: leaf.content,
+              content: action.loc.tree.content,
               rule: 'Ax',
               children: [],
               key: uuid.v4(),
@@ -282,8 +338,9 @@ const reduceProofState = (
           },
         };
       }
+    } else if (action.name === 'applyCut') {
+      return applyCut(state, action.loc, action.pos, action.cutFormula);
     } else if (
-      action.name === 'applyCut' ||
       action.name === 'applyTimes' ||
       action.name === 'applyPar' ||
       action.name === 'applyWith' ||
@@ -297,6 +354,47 @@ const reduceProofState = (
       return applyRule(state, action.name, action.loc, action.pos);
     } else if (action.name === 'moveFormula') {
       return applyMove(state, action.loc, action.from, action.to);
+    } else if (action.name === 'showWhyNotModal') {
+      return {
+        ...state,
+        proofState: {
+          proof: proofState.proof,
+          name: 'showModal',
+          modalType: 'whyNot',
+          loc: action.loc,
+          pos: action.pos,
+        },
+      };
+    } else if (action.name === 'showPlusModal') {
+      return {
+        ...state,
+        proofState: {
+          proof: proofState.proof,
+          name: 'showModal',
+          modalType: 'plus',
+          loc: action.loc,
+          pos: action.pos,
+        },
+      };
+    } else if (action.name === 'showCutModal') {
+      return {
+        ...state,
+        proofState: {
+          proof: proofState.proof,
+          name: 'showModal',
+          modalType: 'cut',
+          loc: action.loc,
+          pos: action.pos,
+        },
+      };
+    } else if (action.name === 'closeModal') {
+      return {
+        ...state,
+        proofState: {
+          proof: proofState.proof,
+          name: 'showProof',
+        },
+      };
     } else {
       // never
       return action;
