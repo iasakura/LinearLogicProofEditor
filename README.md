@@ -17,3 +17,4 @@ demo: https://iasakura.github.io/LinearLogicProofEditor/
 - Click variable: apply axiom
 - Click operator: apply right rule
 - Click comma between formula: apply cut rule
+- Drag&drop: change the order of a formula in a sequent
