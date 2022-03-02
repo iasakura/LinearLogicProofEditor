@@ -1,8 +1,5 @@
-import { storiesOf } from '@storybook/react';
-import React, { Children } from 'react';
 import { Derivation } from '../lib/Derivation';
 import { DerivationTree } from './DerivationTree';
-import { DerivationNode } from './DerivationNode';
 
 export default {
   title: 'Proof Example',

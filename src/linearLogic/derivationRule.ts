@@ -197,7 +197,7 @@ export const applyOr1Rule = (
 ): Sequent[] | undefined => {
   try {
     const [left, f, right] = splitAt(s, pos) || escape();
-    const [a, b] = childOfBin('or', f) || escape();
+    const [a] = childOfBin('or', f) || escape();
 
     return [left.concat(a, ...right)];
   } catch (e) {
@@ -211,7 +211,7 @@ export const applyOr2Rule = (
 ): Sequent[] | undefined => {
   try {
     const [left, f, right] = splitAt(s, pos) || escape();
-    const [a, b] = childOfBin('or', f) || escape();
+    const [a] = childOfBin('or', f) || escape();
 
     return [left.concat(a, ...right)];
   } catch (e) {

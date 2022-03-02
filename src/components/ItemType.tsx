@@ -1,1 +1,1 @@
-export const ItemType = 'Formula'
+export const ItemType = 'Formula';

@@ -94,7 +94,12 @@ const CutInputForm = (props: { loc: Loc<Sequent>; pos: number }) => {
     const formula = parseFormula(cutFormula);
     dispatch({
       name: 'proofAction',
-      action: { name: 'applyCut', loc: props.loc, pos: props.pos, cutFormula: formula },
+      action: {
+        name: 'applyCut',
+        loc: props.loc,
+        pos: props.pos,
+        cutFormula: formula,
+      },
     });
   };
 

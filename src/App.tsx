@@ -1,4 +1,3 @@
-import React from 'react';
 import './App.css';
 import { ProofApp } from './components/ProofEditor';
 

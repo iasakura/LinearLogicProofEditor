@@ -1,4 +1,4 @@
-import React, { ReactElement } from 'react';
+import { ReactElement } from 'react';
 import styled from 'styled-components';
 import { Derivation, Loc } from '../lib/Derivation';
 import { DerivationTreeInternal } from './DerivationTreeInternal';
