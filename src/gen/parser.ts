@@ -6,7 +6,7 @@
 "use strict";
 
 
-  import { Formula } from '../linearLogic/Formula';
+  import { Formula } from '../models/linearLogic/Formula';
 
   const opToName = (op: string) => {
     if (op == '|') { return 'or'; }

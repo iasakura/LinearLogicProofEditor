@@ -1,7 +1,7 @@
 import React from 'react';
 import { Loc } from '../derivation-tree';
-import { Sequent } from '../linearLogic/Formula';
-import { parseFormula } from '../linearLogic/parser';
+import { Sequent } from '../models/linearLogic/Formula';
+import { parseFormula } from '../models/linearLogic/parser';
 import { DispatcherContext } from '../reducer/Reducer';
 
 const WhyNotInputForm = (props: { loc: Loc<Sequent>; pos: number }) => {

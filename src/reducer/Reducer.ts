@@ -13,8 +13,8 @@ import {
   applyTensorRule,
   applyWeakeningRule,
   checkAxiomRule,
-} from '../linearLogic/derivationRule';
-import { Formula, Sequent } from '../linearLogic/Formula';
+} from '../models/linearLogic/derivationRule';
+import { Formula, Sequent } from '../models/linearLogic/Formula';
 import { todo } from '../util';
 import * as uuid from 'uuid';
 
