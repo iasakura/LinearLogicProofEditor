@@ -69,4 +69,4 @@ jobs:
         run: yarn install --frozen-lockfile
 
       - name: test
-        uses: ArtiomTr/jest-coverage-report-action@v2
+        run: yarn test
