@@ -144,7 +144,7 @@ export const ProofNetStory = () => {
     ],
   };
 
-  const elements = ps.psToElements({ concls: [lam], boxes: [] });
+  const elements = ps.psToElements({ concls: lam.concls(), boxes: [] });
   console.log(JSON.stringify(elements, null, 2));
 
   const cyref = React.useRef<cytoscape.Core>();

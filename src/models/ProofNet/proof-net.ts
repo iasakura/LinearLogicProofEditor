@@ -1,3 +1,9 @@
+import * as uuid from 'uuid';
+
+const unreachable = () => {
+  throw Error('unreachable');
+};
+
 export type Edge = { from: Link; to?: Link };
 
 export type AbstractLink = {
@@ -14,7 +20,10 @@ export type Link =
   | OfCourse
   | Dereliction
   | Weakening
-  | Contraction;
+  | Contraction
+  | Constant
+  | Prim
+  | Cond;
 
 export type Ax = {
   name: 'axiom';
@@ -22,70 +31,209 @@ export type Ax = {
   concls: () => [Edge, Edge];
   id: string;
 };
+
+export const Ax = (): Ax => {
+  let concls: [Edge, Edge] | undefined = undefined;
+  const node: Ax = {
+    name: 'axiom',
+    prems: () => [],
+    concls: () => concls ?? unreachable(),
+    id: uuid.v4(),
+  };
+  concls = [{ from: node }, { from: node }];
+  return node;
+};
+
 export type Cut = {
   name: 'cut';
   prems: () => [Edge, Edge];
   concls: () => [];
   id: string;
 };
+
+export const Cut = (prem1: Edge, prem2: Edge) => {
+  const cut: Cut = {
+    name: 'cut',
+    prems: () => [prem1, prem2],
+    concls: () => [],
+    id: uuid.v4(),
+  };
+  prem1.to = cut;
+  prem2.to = cut;
+  return cut;
+};
+
 export type Par = {
   name: 'par';
   prems: () => [Edge, Edge];
   concls: () => [Edge];
   id: string;
 };
+
+export const Par = (prem1: Edge, prem2: Edge) => {
+  let concls: [Edge] | undefined = undefined;
+  const par: Par = {
+    name: 'par',
+    prems: () => [prem1, prem2],
+    concls: () => concls ?? unreachable(),
+    id: uuid.v4(),
+  };
+  (concls = [{ from: par }]), (prem1.to = par);
+  prem2.to = par;
+
+  return par;
+};
+
 export type Tensor = {
   name: 'tensor';
   prems: () => [Edge, Edge];
   concls: () => [Edge];
   id: string;
 };
+
+export const Tensor = (prem1: Edge, prem2: Edge) => {
+  let concls: [Edge] | undefined = undefined;
+  const tensor: Tensor = {
+    name: 'tensor',
+    prems: () => [prem1, prem2],
+    concls: () => concls ?? unreachable(),
+    id: uuid.v4(),
+  };
+  (concls = [{ from: tensor }]), (prem1.to = tensor);
+  prem2.to = tensor;
+
+  return tensor;
+};
+
 export type OfCourse = {
   name: 'ofCourse';
   prems: () => [Edge];
   concls: () => [Edge];
   id: string;
 };
+
+export const OfCourse = (prem: Edge): OfCourse => {
+  let concls: [Edge] | undefined = undefined;
+  const ofCourse: OfCourse = {
+    name: 'ofCourse',
+    prems: () => [prem],
+    concls: () => concls ?? unreachable(),
+    id: uuid.v4(),
+  };
+  concls = [{ from: ofCourse }];
+  prem.to = ofCourse;
+
+  return ofCourse;
+};
+
 export type Dereliction = {
   name: 'dereliction';
   prems: () => [Edge];
   concls: () => [Edge];
   id: string;
 };
+
+export const Dereliction = (prem: Edge): Dereliction => {
+  let concls: [Edge] | undefined = undefined;
+  const dereliction: Dereliction = {
+    name: 'dereliction',
+    prems: () => [prem],
+    concls: () => concls ?? unreachable(),
+    id: uuid.v4(),
+  };
+  prem.to = dereliction;
+  concls = [
+    {
+      from: dereliction,
+    },
+  ];
+  return dereliction;
+};
+
 export type Weakening = {
   name: 'weakening';
   prems: () => [];
   concls: () => [Edge];
   id: string;
 };
+
+export const Weakening = () => {
+  let concls: [Edge] | undefined = undefined;
+  const weakening: Weakening = {
+    name: 'weakening',
+    prems: () => [],
+    concls: () => concls ?? unreachable(),
+    id: uuid.v4(),
+  };
+  concls = [{ from: weakening }];
+  return weakening;
+};
+
 export type Contraction = {
   name: 'contraction';
   prems: () => [Edge, Edge];
   concls: () => [Edge];
   id: string;
 };
+export const Contraction = (prem1: Edge, prem2: Edge) => {
+  let concls: [Edge] | undefined = undefined;
+  const contraction: Contraction = {
+    name: 'contraction',
+    prems: () => [prem1, prem2],
+    concls: () => concls ?? unreachable(),
+    id: uuid.v4(),
+  };
+  concls = [{ from: contraction }];
+  prem1.to = contraction;
+  prem2.to = contraction;
+
+  return contraction;
+};
 
 export type Constant = {
-  name: number | boolean;
+  name: 'constant';
+  val: number | boolean;
   prems: () => [];
   concls: () => [Edge];
+  id: string;
 };
-export type Arith = {
+
+export const Constant = (n: number | boolean): Constant => {
+  let concls: [Edge] | undefined = undefined;
+  const c: Constant = {
+    name: 'constant',
+    val: n,
+    prems: () => [],
+    concls: () => concls ?? unreachable(),
+    id: uuid.v4(),
+  };
+  concls = [
+    {
+      from: c,
+    },
+  ];
+  return c;
+};
+
+export type Prim = {
   name: 'succ' | 'pred' | 'iszero';
   prems: () => [];
   concls: () => [Edge, Edge];
+  id: string;
 };
+
 export type Cond = {
   name: 'cond';
   prems: () => [];
   concls: () => [Edge, Edge, Edge];
+  id: string;
 };
 
 export type ProofStructure = {
-  concls: Link[];
+  concls: Edge[];
   boxes: Box[];
 };
-export type Box = { principle: Link; auxiliaries: Link[] };
+export type Box = { principle: OfCourse; auxiliaries: Edge[] };
 
 const linkNameToString = (op: string) => {
   if (op === 'tensor') {
@@ -104,8 +252,11 @@ const linkNameToString = (op: string) => {
     return 'c';
   } else if (op === 'weakening') {
     return 'w';
+  } else if (op === 'constant') {
+    // TODO
+    return 'T';
   } else {
-    throw Error('Unknown link name');
+    return op;
   }
 };
 
@@ -126,7 +277,12 @@ const labelOfEdge = (edge: Edge, boxes: Box[]): Label[] => {
   }
   const labels: Label[] = [];
   if (
-    boxes.find((box) => !!box.auxiliaries.find((link) => link.id === from.id))
+    boxes.find(
+      (box) =>
+        !!box.auxiliaries.find(
+          (edge) => edge.from.id === from.id && edge.to?.id === to.id
+        )
+    )
   ) {
     labels.push('t');
   }
@@ -171,8 +327,8 @@ export const psToElements = (
 
   const getBox = (id: string): Box | undefined => {
     return pn.boxes.find((box) => {
-      const doors = [box.principle, ...box.auxiliaries];
-      return !!doors.find((door) => door.id === id);
+      const doors = [...box.principle.concls(), ...box.auxiliaries];
+      return !!doors.find((door) => door.from.id === id);
     });
   };
 
@@ -260,8 +416,8 @@ export const psToElements = (
     });
   };
 
-  pn.concls.forEach((link) => {
-    visitLink(link, undefined);
+  pn.concls.forEach((edge) => {
+    visitLink(edge.from, undefined);
   });
 
   return elements;

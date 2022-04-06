@@ -33,7 +33,7 @@
     "eject": "react-scripts eject",
     "storybook": "start-storybook -p 6006 -s public",
     "build-storybook": "build-storybook -s public",
-    "gen-parser": "./node_modules/.bin/peggy --plugin ./node_modules/ts-pegjs/src/tspegjs.js -o src/gen/parser.ts --cache src/linearLogic/parser.peggy",
+    "gen-parser": "./node_modules/.bin/peggy --plugin ./node_modules/ts-pegjs/src/tspegjs.js -o src/gen/parser.ts --cache src/models/linearLogic/parser.peggy && ./node_modules/.bin/peggy --plugin ./node_modules/ts-pegjs/src/tspegjs.js -o src/gen/pcf-parser.ts --cache src/models/PCF/parser.peggy",
     "deploy": "yarn run gen-parser && yarn build && gh-pages -d build",
     "lint": "eslint --max-warnings=0 src",
     "lint:fix": "eslint --fix src",
