@@ -54,6 +54,9 @@ export const termToPN = (
     const der = pn.Dereliction(tensor.concls()[0]);
     const _cut = pn.Cut(conclOfPn(f_pn), der.concls()[0]);
 
+    console.log(`${f_pn.ctxMap}`);
+    console.log(`${arg_pn.ctxMap}`);
+
     const ctx_concls: pn.Edge[] = [];
     f_pn.ctxMap.forEach((v, i) => {
       const arg_idx = arg_pn.ctxMap.findIndex((arg_v) => v === arg_v);
@@ -93,10 +96,15 @@ export const termToPN = (
     }
     const box: pn.Box = { principle: ofCourse, auxiliaries };
 
+    const ctxMap = body_pn.ctxMap;
+    if (argIdx >= 0) {
+      ctxMap.splice(argIdx, 1);
+    }
+
     return {
       concls: [...auxiliaries, ofCourse.concls()[0]],
       boxes: [...body_pn.boxes, box],
-      ctxMap: argIdx === -1 ? body_pn.ctxMap : body_pn.ctxMap.splice(argIdx, 1),
+      ctxMap,
     };
   } else if (term.name === 'prim') {
     throw Error('TODO: implement');

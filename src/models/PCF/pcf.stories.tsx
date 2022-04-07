@@ -13,7 +13,7 @@ export default {
 
 export const ProofNetStory = () => {
   const [termSrc, setTermSrc] = React.useState<string>(
-    '(lam x: nat. (lam y: nat. y) x) 3'
+    '(lam x: nat.  x) 3'
   );
   const [elements, setElements] =
     React.useState<cytoscape.ElementDefinition[]>();

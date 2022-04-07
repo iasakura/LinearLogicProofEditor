@@ -320,7 +320,7 @@ export const psToElements = (
   pn: ProofStructure
 ): cytoscape.ElementDefinition[] => {
   const visited = new Set<string>();
-  const boxNames = new Map<string, string>();
+  const boxNames = new Set<string>();
   const elements: cytoscape.ElementDefinition[] = [];
 
   let rootCnt = 0;
@@ -339,27 +339,27 @@ export const psToElements = (
     visited.add(link.id);
 
     const box = getBox(link.id);
-    const newBox = box ? box.principle.id : currentBox;
+    const newBox = box ? `${box.principle.id}-box` : currentBox;
 
-    if (newBox && !boxNames.get(newBox)) {
-      const name = `box${boxNames.size + 1}`;
-      boxNames.set(newBox, name);
+    if (box && !boxNames.has(box.principle.id)) {
+      boxNames.add(box.principle.id);
       elements.push({
         group: 'nodes',
         data: {
-          id: name,
+          id: newBox,
           parent: currentBox,
           label: '!',
         },
       });
     }
 
+    console.log(`${link.name}: ${newBox}`)
     elements.push({
       group: 'nodes',
       data: {
         id: link.id,
         label: linkNameToString(link.name),
-        parent: !newBox ? newBox : boxNames.get(newBox),
+        parent: newBox,
       },
     });
 
@@ -407,7 +407,6 @@ export const psToElements = (
             group: 'nodes',
             data: {
               id: rootId,
-              parent: currentBox,
               label: 'root',
             },
           }
