@@ -1,4 +1,3 @@
-import assert from 'assert';
 import * as pn from '../ProofNet/proof-net';
 
 export type Var = string;
@@ -88,12 +87,14 @@ export const termToPN = (
     const par = pn.Par(arg_concl, conclOfPn(body_pn));
     const ofCourse = pn.OfCourse(par.concls()[0]);
 
-    const auxiliaries =
-      argIdx === -1 ? premsOfPn(body_pn) : premsOfPn(body_pn).splice(argIdx, 1);
+    const auxiliaries = premsOfPn(body_pn);
+    if (argIdx >= 0) {
+      auxiliaries.splice(argIdx, 1);
+    }
     const box: pn.Box = { principle: ofCourse, auxiliaries };
 
     return {
-      concls: [...auxiliaries, par.concls()[0]],
+      concls: [...auxiliaries, ofCourse.concls()[0]],
       boxes: [...body_pn.boxes, box],
       ctxMap: argIdx === -1 ? body_pn.ctxMap : body_pn.ctxMap.splice(argIdx, 1),
     };

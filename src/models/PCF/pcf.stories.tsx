@@ -29,15 +29,14 @@ export const ProofNetStory = () => {
 
   const handleSubmit = (ev: React.FormEvent<HTMLInputElement>) => {
     ev.preventDefault();
-    setElements(psToElements(termToPN([], parseTerm(termSrc))));
+    const graph = psToElements(termToPN([], parseTerm(termSrc)))
+    setElements(graph);
   };
 
   return (
     <div>
-      <form>
-        <input type="text" value={termSrc} onChange={handleChange} />
-        <input type="button" value={'show'} onClick={handleSubmit} />
-      </form>
+      <input type="text" value={termSrc} onChange={handleChange} />
+      <input type="button" value={'show'} onClick={handleSubmit} />
       {elements && (
         <CytoscapeComponent
           elements={elements}

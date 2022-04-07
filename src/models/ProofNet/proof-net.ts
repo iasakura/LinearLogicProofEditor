@@ -374,7 +374,7 @@ export const psToElements = (
         },
       });
       if (!visited.has(edge.from.id)) {
-        visitLink(edge.from, currentBox);
+        visitLink(edge.from, newBox);
       }
     });
 
@@ -390,7 +390,7 @@ export const psToElements = (
           },
         });
         if (!visited.has(edge.to.id)) {
-          visitLink(edge.to, currentBox);
+          visitLink(edge.to, newBox);
         }
       } else {
         const rootId = `root${rootCnt++}`;
