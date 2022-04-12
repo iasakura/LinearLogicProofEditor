@@ -1,23 +1,5 @@
 import * as pn from '../ProofNet/proof-net';
-
-export type Var = string;
-
-export type Typ =
-  | { name: 'bool' }
-  | { name: 'nat' }
-  | { name: 'arrow'; types: [Typ, Typ] };
-
-export type primitives = 'succ' | 'pred' | 'iszero' | 'cond' | 'Y';
-
-export type Term =
-  | { name: 'var'; v: Var }
-  | { name: 'nat-const'; val: number }
-  | { name: 'bool-const'; val: boolean }
-  | { name: 'app'; terms: [Term, Term] }
-  | { name: 'lambda'; v: string; typ: Typ; body: Term }
-  | { name: 'prim'; v: primitives };
-
-export type Context = [Var, Typ][];
+import { Context, Term, Var } from './types';
 
 const conclOfPn = (pn: pn.ProofStructure) => {
   return pn.concls[pn.concls.length - 1];
@@ -107,7 +89,56 @@ export const termToPN = (
       ctxMap,
     };
   } else if (term.name === 'prim') {
-    throw Error('TODO: implement');
+    if (term.v === 'succ' || term.v === 'pred' || term.v === 'iszero') {
+      const prim = pn.Prim(term.v);
+      const inp = pn.Dereliction(prim.concls()[0]);
+      const out = pn.OfCourse(prim.concls()[1]);
+      const box1: pn.Box = { principle: out, auxiliaries: inp.concls() };
+      const par = pn.Par(inp.concls()[0], out.concls()[0]);
+      const ofCourse = pn.OfCourse(par.concls()[0]);
+      const box2: pn.Box = { principle: ofCourse, auxiliaries: [] };
+
+      return {
+        concls: ofCourse.concls(),
+        boxes: [box1, box2],
+        ctxMap: [],
+      };
+    } else if (term.v === 'cond') {
+      const cond = pn.Cond();
+      const [c, th, el, res] = cond.concls();
+      const dc = pn.Dereliction(c);
+      const or = pn.OfCourse(res);
+      const box1: pn.Box = {
+        principle: or,
+        auxiliaries: [...dc.concls(), th, el],
+      };
+      const f1 = pn.Par(el, or.concls()[0]);
+      const f1o = pn.OfCourse(f1.concls()[0]);
+      const box2: pn.Box = {
+        principle: f1o,
+        auxiliaries: [...dc.concls(), th],
+      };
+      const f2 = pn.Par(th, f1o.concls()[0]);
+      const f2o = pn.OfCourse(f2.concls()[0]);
+      const box3: pn.Box = {
+        principle: f2o,
+        auxiliaries: [...dc.concls()],
+      };
+      const f3 = pn.Par(dc.concls()[0], f2o.concls()[0]);
+      const f3o = pn.OfCourse(f3.concls()[0]);
+      const box4: pn.Box = {
+        principle: f3o,
+        auxiliaries: [],
+      };
+
+      return {
+        concls: f3o.concls(),
+        boxes: [box1, box2, box3, box4],
+        ctxMap: [],
+      };
+    } else {
+      throw Error('unimplemented');
+    }
   } else {
     // never
     return term;

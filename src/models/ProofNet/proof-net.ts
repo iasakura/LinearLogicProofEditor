@@ -4,7 +4,7 @@ const unreachable = () => {
   throw Error('unreachable');
 };
 
-export type Edge = { from: Link; to?: Link };
+export type Edge = { from: Link; to?: Link; id: string };
 
 export type AbstractLink = {
   name: string;
@@ -25,6 +25,17 @@ export type Link =
   | Prim
   | Cond;
 
+export type Root = {
+  name: 'root';
+  prems: () => [Edge];
+  concls: () => [];
+  id: string;
+};
+
+const Root = (edge: Edge): Root => {
+  return { name: 'root', prems: () => [edge], concls: () => [], id: uuid.v4() };
+};
+
 export type Ax = {
   name: 'axiom';
   prems: () => [];
@@ -40,7 +51,10 @@ export const Ax = (): Ax => {
     concls: () => concls ?? unreachable(),
     id: uuid.v4(),
   };
-  concls = [{ from: node }, { from: node }];
+  concls = [
+    { from: node, id: uuid.v4() },
+    { from: node, id: uuid.v4() },
+  ];
   return node;
 };
 
@@ -78,7 +92,7 @@ export const Par = (prem1: Edge, prem2: Edge) => {
     concls: () => concls ?? unreachable(),
     id: uuid.v4(),
   };
-  (concls = [{ from: par }]), (prem1.to = par);
+  (concls = [{ from: par, id: uuid.v4() }]), (prem1.to = par);
   prem2.to = par;
 
   return par;
@@ -99,7 +113,7 @@ export const Tensor = (prem1: Edge, prem2: Edge) => {
     concls: () => concls ?? unreachable(),
     id: uuid.v4(),
   };
-  (concls = [{ from: tensor }]), (prem1.to = tensor);
+  (concls = [{ from: tensor, id: uuid.v4() }]), (prem1.to = tensor);
   prem2.to = tensor;
 
   return tensor;
@@ -120,7 +134,7 @@ export const OfCourse = (prem: Edge): OfCourse => {
     concls: () => concls ?? unreachable(),
     id: uuid.v4(),
   };
-  concls = [{ from: ofCourse }];
+  concls = [{ from: ofCourse, id: uuid.v4() }];
   prem.to = ofCourse;
 
   return ofCourse;
@@ -145,6 +159,7 @@ export const Dereliction = (prem: Edge): Dereliction => {
   concls = [
     {
       from: dereliction,
+      id: uuid.v4(),
     },
   ];
   return dereliction;
@@ -165,7 +180,7 @@ export const Weakening = () => {
     concls: () => concls ?? unreachable(),
     id: uuid.v4(),
   };
-  concls = [{ from: weakening }];
+  concls = [{ from: weakening, id: uuid.v4() }];
   return weakening;
 };
 
@@ -183,7 +198,7 @@ export const Contraction = (prem1: Edge, prem2: Edge) => {
     concls: () => concls ?? unreachable(),
     id: uuid.v4(),
   };
-  concls = [{ from: contraction }];
+  concls = [{ from: contraction, id: uuid.v4() }];
   prem1.to = contraction;
   prem2.to = contraction;
 
@@ -210,6 +225,7 @@ export const Constant = (n: number | boolean): Constant => {
   concls = [
     {
       from: c,
+      id: uuid.v4(),
     },
   ];
   return c;
@@ -222,11 +238,43 @@ export type Prim = {
   id: string;
 };
 
+export const Prim = (name: 'succ' | 'pred' | 'iszero'): Prim => {
+  let concls: [Edge, Edge] | undefined = undefined;
+  const node: Prim = {
+    name,
+    prems: () => [],
+    concls: () => concls ?? unreachable(),
+    id: uuid.v4(),
+  };
+  concls = [
+    { from: node, id: uuid.v4() },
+    { from: node, id: uuid.v4() },
+  ];
+  return node;
+};
+
 export type Cond = {
   name: 'cond';
   prems: () => [];
-  concls: () => [Edge, Edge, Edge];
+  concls: () => [Edge, Edge, Edge, Edge];
   id: string;
+};
+
+export const Cond = (): Cond => {
+  let concls: [Edge, Edge, Edge, Edge] | undefined = undefined;
+  const node: Cond = {
+    name: 'cond',
+    prems: () => [],
+    concls: () => concls ?? unreachable(),
+    id: uuid.v4(),
+  };
+  concls = [
+    { from: node, id: uuid.v4() },
+    { from: node, id: uuid.v4() },
+    { from: node, id: uuid.v4() },
+    { from: node, id: uuid.v4() },
+  ];
+  return node;
 };
 
 export type ProofStructure = {
@@ -235,7 +283,8 @@ export type ProofStructure = {
 };
 export type Box = { principle: OfCourse; auxiliaries: Edge[] };
 
-const linkNameToString = (op: string) => {
+const linkNameToString = (link: Link) => {
+  const op = link.name;
   if (op === 'tensor') {
     return '⊗';
   } else if (op === 'par') {
@@ -254,7 +303,7 @@ const linkNameToString = (op: string) => {
     return 'w';
   } else if (op === 'constant') {
     // TODO
-    return 'T';
+    return link.val.toString() + '\u203e';
   } else {
     return op;
   }
@@ -309,11 +358,7 @@ const labelOfEdge = (edge: Edge, boxes: Box[]): Label[] => {
 };
 
 const toCytoscopeLabel = (ls: Label[]): string => {
-  if (ls.length === 0) {
-    return '1';
-  } else {
-    return ls.join('');
-  }
+  return ls.join('');
 };
 
 export const psToElements = (
@@ -353,12 +398,11 @@ export const psToElements = (
       });
     }
 
-    console.log(`${link.name}: ${newBox}`)
     elements.push({
       group: 'nodes',
       data: {
         id: link.id,
-        label: linkNameToString(link.name),
+        label: linkNameToString(link),
         parent: newBox,
       },
     });
@@ -369,7 +413,7 @@ export const psToElements = (
         data: {
           source: edge.from.id,
           target: link.id,
-          id: edge.from.id + '->' + link.id,
+          id: edge.id,
           label: toCytoscopeLabel(labelOfEdge(edge, pn.boxes)),
         },
       });
@@ -385,7 +429,7 @@ export const psToElements = (
           data: {
             source: link.id,
             target: edge.to.id,
-            id: link.id + '->' + edge.to.id,
+            id: edge.id,
             label: toCytoscopeLabel(labelOfEdge(edge, pn.boxes)),
           },
         });
@@ -400,7 +444,7 @@ export const psToElements = (
             data: {
               source: link.id,
               target: rootId,
-              id: link.id + '->' + rootId,
+              id: edge.id,
             },
           },
           {

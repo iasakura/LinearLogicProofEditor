@@ -6,7 +6,7 @@
 "use strict";
 
 
-  import {Typ} from '../models/PCF/pcf';
+  import {Typ} from '../models/PCF/types';
 
 
 export interface IFilePosition {
