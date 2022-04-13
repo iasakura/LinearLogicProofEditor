@@ -1,0 +1,65 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`complex 1`] = `
+Object {
+  "body": Object {
+    "body": Object {
+      "name": "app",
+      "terms": Array [
+        Object {
+          "name": "var",
+          "v": "f",
+        },
+        Object {
+          "name": "app",
+          "terms": Array [
+            Object {
+              "name": "var",
+              "v": "f",
+            },
+            Object {
+              "name": "app",
+              "terms": Array [
+                Object {
+                  "name": "var",
+                  "v": "f",
+                },
+                Object {
+                  "name": "var",
+                  "v": "x",
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    },
+    "name": "lambda",
+    "typ": Object {
+      "name": "nat",
+    },
+    "v": "x",
+  },
+  "name": "lambda",
+  "typ": Object {
+    "name": "arrow",
+    "types": Array [
+      Object {
+        "name": "nat",
+      },
+      Object {
+        "name": "arrow",
+        "types": Array [
+          Object {
+            "name": "nat",
+          },
+          Object {
+            "name": "nat",
+          },
+        ],
+      },
+    ],
+  },
+  "v": "f",
+}
+`;

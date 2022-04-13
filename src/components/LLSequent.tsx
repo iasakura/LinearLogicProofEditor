@@ -7,7 +7,7 @@ import {
   formulaToString,
   opToString,
   OpName,
-} from '../linearLogic/Formula';
+} from '../models/linearLogic/Formula';
 import { DispatcherContext, EditorAction } from '../reducer/Reducer';
 import { Loc } from '../derivation-tree';
 import { DroppableSpace, DropResult } from './DroppableSpace';

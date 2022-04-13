@@ -4,8 +4,8 @@ import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 
 import styled from 'styled-components';
-import { Sequent } from '../linearLogic/Formula';
-import { parseSequent } from '../linearLogic/parser';
+import { Sequent } from '../models/linearLogic/Formula';
+import { parseSequent } from '../models/linearLogic/parser';
 import { DerivationTree, Derivation, Loc } from '../derivation-tree';
 import { LLSequent } from './LLSequent';
 import { reduce, DispatcherContext } from '../reducer/Reducer';
