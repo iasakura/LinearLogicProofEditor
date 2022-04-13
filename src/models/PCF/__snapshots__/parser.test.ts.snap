@@ -35,9 +35,9 @@ Object {
       ],
     },
     "name": "lambda",
-    "typ": Array [
-      "nat",
-    ],
+    "typ": Object {
+      "name": "nat",
+    },
     "v": "x",
   },
   "name": "lambda",
@@ -45,33 +45,19 @@ Object {
     "name": "arrow",
     "types": Array [
       Object {
+        "name": "nat",
+      },
+      Object {
         "name": "arrow",
         "types": Array [
-          Array [
-            Array [
-              Array [],
-              "->",
-              Array [
-                " ",
-              ],
-              "nat",
-            ],
-            Array [
-              Array [
-                " ",
-              ],
-              "->",
-              Array [
-                " ",
-              ],
-              "nat",
-            ],
-            "nat",
-          ],
-          "nat",
+          Object {
+            "name": "nat",
+          },
+          Object {
+            "name": "nat",
+          },
         ],
       },
-      "nat",
     ],
   },
   "v": "f",
