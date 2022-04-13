@@ -6,7 +6,7 @@
 "use strict";
 
 
-  import {Typ} from '../models/PCF/types';
+  import {Typ, Term} from '../models/PCF/types';
 
 
 export interface IFilePosition {
@@ -243,8 +243,10 @@ function peg$parse(input: string, options?: IParseOptions) {
   const peg$c15 = function(a: any): any {
         return a;
     };
-  const peg$c16 = function(f: any, x: any): any {
-        return { name: 'app', terms: [f, x]}
+  const peg$c16 = function(f: any, args: any): any {
+        return args.reduce((acc: Term, x: [string, Term]) => {
+          return { name: 'app', terms: [acc, x[1]]}
+        }, f);
     };
   const peg$c17 = function(p: any): any {
         return p;
@@ -696,7 +698,7 @@ function peg$parse(input: string, options?: IParseOptions) {
   }
 
   function peg$parseApp(): any {
-    let s0, s1, s2, s3;
+    let s0, s1, s2, s3, s4, s5;
 
     const key = peg$currPos * 12 + 2;
     const cached: ICached = peg$resultsCache[key];
@@ -710,17 +712,48 @@ function peg$parse(input: string, options?: IParseOptions) {
     s0 = peg$currPos;
     s1 = peg$parsePrim();
     if (s1 as any !== peg$FAILED) {
-      s2 = peg$parse_();
-      if (s2 as any !== peg$FAILED) {
-        s3 = peg$parsePrim();
-        if (s3 as any !== peg$FAILED) {
-          peg$savedPos = s0;
-          s1 = peg$c16(s1, s3);
-          s0 = s1;
+      s2 = [];
+      s3 = peg$currPos;
+      s4 = peg$parse_();
+      if (s4 as any !== peg$FAILED) {
+        s5 = peg$parsePrim();
+        if (s5 as any !== peg$FAILED) {
+          s4 = [s4, s5];
+          s3 = s4;
         } else {
-          peg$currPos = s0;
-          s0 = peg$FAILED;
+          peg$currPos = s3;
+          s3 = peg$FAILED;
         }
+      } else {
+        peg$currPos = s3;
+        s3 = peg$FAILED;
+      }
+      if (s3 as any !== peg$FAILED) {
+        while (s3 as any !== peg$FAILED) {
+          s2.push(s3);
+          s3 = peg$currPos;
+          s4 = peg$parse_();
+          if (s4 as any !== peg$FAILED) {
+            s5 = peg$parsePrim();
+            if (s5 as any !== peg$FAILED) {
+              s4 = [s4, s5];
+              s3 = s4;
+            } else {
+              peg$currPos = s3;
+              s3 = peg$FAILED;
+            }
+          } else {
+            peg$currPos = s3;
+            s3 = peg$FAILED;
+          }
+        }
+      } else {
+        s2 = peg$FAILED;
+      }
+      if (s2 as any !== peg$FAILED) {
+        peg$savedPos = s0;
+        s1 = peg$c16(s1, s2);
+        s0 = s1;
       } else {
         peg$currPos = s0;
         s0 = peg$FAILED;

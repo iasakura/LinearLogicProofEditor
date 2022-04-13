@@ -2,6 +2,7 @@ import React from 'react';
 import CytoscapeComponent from 'react-cytoscapejs';
 import cytoscape from 'cytoscape';
 import dagre from 'cytoscape-dagre';
+import * as uuid from 'uuid';
 
 import * as ps from './proof-net';
 
@@ -14,37 +15,37 @@ export const ProofNetStory = () => {
     id: 'lam x. lam f. f (f x)',
     name: 'par',
     prems: () => [
-      { from: xax, to: lam },
-      { from: lam2, to: lam },
+      { from: xax, to: lam, id: uuid.v4() },
+      { from: lam2, to: lam, id: uuid.v4() },
     ],
-    concls: () => [{ from: lam }],
+    concls: () => [{ from: lam, id: uuid.v4() }],
   };
 
   const lam2: ps.Par = {
     id: 'lam f. f (f x)',
     name: 'par',
     prems: () => [
-      { from: fc, to: lam2 },
-      { from: ax4, to: lam2 },
+      { from: fc, to: lam2, id: uuid.v4() },
+      { from: ax4, to: lam2, id: uuid.v4() },
     ],
-    concls: () => [{ from: lam2, to: lam }],
+    concls: () => [{ from: lam2, to: lam, id: uuid.v4() }],
   };
 
   const fc: ps.Contraction = {
     id: 'contract f',
     name: 'contraction',
     prems: () => [
-      { from: fd1, to: fc },
-      { from: fd2, to: fc },
+      { from: fd1, to: fc, id: uuid.v4() },
+      { from: fd2, to: fc, id: uuid.v4() },
     ],
-    concls: () => [{ from: fc, to: lam2 }],
+    concls: () => [{ from: fc, to: lam2, id: uuid.v4() }],
   };
 
   const fd1: ps.Dereliction = {
     id: 'f dereliction 1',
     name: 'dereliction',
-    prems: () => [{ from: fax1, to: fd1 }],
-    concls: () => [{ from: fd1, to: fc }],
+    prems: () => [{ from: fax1, to: fd1, id: uuid.v4() }],
+    concls: () => [{ from: fd1, to: fc, id: uuid.v4() }],
   };
 
   const fax1: ps.Ax = {
@@ -52,8 +53,8 @@ export const ProofNetStory = () => {
     name: 'axiom',
     prems: () => [],
     concls: () => [
-      { from: fax1, to: fd1 },
-      { from: fax1, to: fcut1 },
+      { from: fax1, to: fd1, id: uuid.v4() },
+      { from: fax1, to: fcut1, id: uuid.v4() },
     ],
   };
 
@@ -61,8 +62,8 @@ export const ProofNetStory = () => {
     id: 'f cut 1',
     name: 'cut',
     prems: () => [
-      { from: fax1, to: fcut1 },
-      { from: app_tensor1, to: fcut1 },
+      { from: fax1, to: fcut1, id: uuid.v4() },
+      { from: app_tensor1, to: fcut1, id: uuid.v4() },
     ],
     concls: () => [],
   };
@@ -71,10 +72,10 @@ export const ProofNetStory = () => {
     id: 'app tensor',
     name: 'tensor',
     prems: () => [
-      { from: xax, to: app_tensor1 },
-      { from: ax3, to: app_tensor1 },
+      { from: xax, to: app_tensor1, id: uuid.v4() },
+      { from: ax3, to: app_tensor1, id: uuid.v4() },
     ],
-    concls: () => [{ from: app_tensor1, to: fcut1 }],
+    concls: () => [{ from: app_tensor1, to: fcut1, id: uuid.v4() }],
   };
 
   const ax3: ps.Ax = {
@@ -82,8 +83,8 @@ export const ProofNetStory = () => {
     name: 'axiom',
     prems: () => [],
     concls: () => [
-      { from: ax3, to: app_tensor1 },
-      { from: ax3, to: app_tensor2 },
+      { from: ax3, to: app_tensor1, id: uuid.v4() },
+      { from: ax3, to: app_tensor2, id: uuid.v4() },
     ],
   };
 
@@ -91,17 +92,17 @@ export const ProofNetStory = () => {
     id: 'app tensor 2',
     name: 'tensor',
     prems: () => [
-      { from: ax3, to: app_tensor2 },
-      { from: ax4, to: app_tensor2 },
+      { from: ax3, to: app_tensor2, id: uuid.v4() },
+      { from: ax4, to: app_tensor2, id: uuid.v4() },
     ],
-    concls: () => [{ from: app_tensor2, to: fcut2 }],
+    concls: () => [{ from: app_tensor2, to: fcut2, id: uuid.v4() }],
   };
 
   const fd2: ps.Dereliction = {
     id: 'f dereliction 2',
     name: 'dereliction',
-    prems: () => [{ from: fax2, to: fd1 }],
-    concls: () => [{ from: fd1, to: fc }],
+    prems: () => [{ from: fax2, to: fd1, id: uuid.v4() }],
+    concls: () => [{ from: fd1, to: fc, id: uuid.v4() }],
   };
 
   const fax2: ps.Ax = {
@@ -109,8 +110,8 @@ export const ProofNetStory = () => {
     name: 'axiom',
     prems: () => [],
     concls: () => [
-      { from: fax2, to: fd2 },
-      { from: fax2, to: fcut2 },
+      { from: fax2, to: fd2, id: uuid.v4() },
+      { from: fax2, to: fcut2, id: uuid.v4() },
     ],
   };
 
@@ -118,8 +119,8 @@ export const ProofNetStory = () => {
     id: 'f cut 2',
     name: 'cut',
     prems: () => [
-      { from: fax2, to: fcut2 },
-      { from: app_tensor2, to: fcut2 },
+      { from: fax2, to: fcut2, id: uuid.v4() },
+      { from: app_tensor2, to: fcut2, id: uuid.v4() },
     ],
     concls: () => [],
   };
@@ -129,8 +130,8 @@ export const ProofNetStory = () => {
     name: 'axiom',
     prems: () => [],
     concls: () => [
-      { from: xax, to: lam },
-      { from: xax, to: app_tensor1 },
+      { from: xax, to: lam, id: uuid.v4() },
+      { from: xax, to: app_tensor1, id: uuid.v4() },
     ],
   };
 
@@ -139,8 +140,8 @@ export const ProofNetStory = () => {
     name: 'axiom',
     prems: () => [],
     concls: () => [
-      { from: ax4, to: app_tensor2 },
-      { from: ax4, to: lam2 },
+      { from: ax4, to: app_tensor2, id: uuid.v4() },
+      { from: ax4, to: lam2, id: uuid.v4() },
     ],
   };
 

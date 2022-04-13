@@ -6,8 +6,8 @@ import dagre from 'cytoscape-dagre';
 import { parseTerm } from './parser';
 import { termToPN } from './compile';
 import { ProofStructure, psToElements } from '../ProofNet/proof-net';
-import { wait } from '../../util';
-import { GoiTraveler, GraphViewer } from '../ProofNet/goi';
+import { GoIInterpreter } from '../ProofNet/goi';
+import { GraphTraveler, GraphViewer } from '../ProofNet/ps-traveler';
 
 export default {
   title: 'PCF',
@@ -18,6 +18,11 @@ export const ProofNetStory = () => {
   const [pn, setPn] = React.useState<ProofStructure>();
   const [elements, setElements] =
     React.useState<cytoscape.ElementDefinition[]>();
+  // msg, edgeId
+  const [log, setLog] = React.useState<[string, string | undefined][]>([]);
+  const [_currentEdge, setCurrentEdge] =
+    React.useState<string | undefined>(undefined);
+  const [selectedIdx, setSelectedIdx] = React.useState<number | undefined>();
 
   const cyref = React.useRef<cytoscape.Core>();
 
@@ -36,53 +41,60 @@ export const ProofNetStory = () => {
     setElements(graph);
   };
 
-  const visit = async (id: string) => {
+  const mark = (id: string) => {
     const root = cyref.current?.$(`#${id}`);
     root?.addClass('highlighted');
-    await wait(500);
+  };
+
+  const unMark = (id: string) => {
+    const root = cyref.current?.$(`#${id}`);
     root?.removeClass('highlighted');
   };
 
-  const visitEdge = async (id: string) => {
-    await visit(id);
+  const selectEdge = (id: string) => {
+    setCurrentEdge((currentEdge) => {
+      if (currentEdge) {
+        unMark(currentEdge);
+      }
+      mark(id);
+      return id;
+    });
   };
-
-  const visitNode = async (id: string) => {
-    await visit(id);
-  };
-
-  const travelerRef = React.useRef<GoiTraveler | undefined>(undefined);
 
   const setStart = (ev: React.FormEvent<HTMLInputElement>) => {
     ev.preventDefault();
 
     const graphViewer: GraphViewer = {
-      visitNode,
-      visitEdge,
-      getStart: (pn: ProofStructure) => {
-        const start = cyref.current
-          ?.$('root0')
-          .neighborhood()
-          .filter((ele) => ele.isEdge())[0];
-        if (!start) {
-          throw Error('Cannot find start');
-        }
-        console.log(start.id());
-        const edge = pn.concls.find((edge) => {
-          console.log(edge.id);
-          return edge.id === start.id();
-        });
-        if (!edge) {
-          // throw Error('Cannot find edge in concl');
-          return pn.concls[0];
-        }
-        return edge;
+      selectEdge,
+      log: (msg: string, id: string | undefined) => {
+        setLog((log) => [...log, [msg, id]]);
       },
     };
 
+    if (!pn) {
+      throw Error('Set pn before run');
+    }
+    const startEdges = cyref.current
+      ?.$('root0')
+      .neighborhood()
+      .filter((ele) => ele.isEdge());
+    if (!startEdges) {
+      throw Error('Cannot find start');
+    }
+    console.log(startEdges);
+    const edge = pn.concls.find((edge) => {
+      console.log(edge.id);
+      return !!startEdges.toArray().find((e) => edge.id === e.id());
+    });
+    if (!edge) {
+      throw Error('Cannot find edge in concl');
+      // return pn.concls[0];
+    }
+    const start = edge;
+
     if (pn) {
-      travelerRef.current = new GoiTraveler(pn, graphViewer);
-      travelerRef.current.run();
+      const graphTraveler = new GraphTraveler(graphViewer);
+      new GoIInterpreter(pn, graphTraveler, start).run();
     }
   };
 
@@ -96,48 +108,68 @@ export const ProofNetStory = () => {
       />
       <input type="button" value={'show'} onClick={handleSubmit} />
       <input type="button" value={'start'} onClick={setStart} />
-      {elements && (
-        <CytoscapeComponent
-          elements={elements}
-          stylesheet={[
-            {
-              selector: 'node',
-              style: {
-                label: 'data(label)',
-                'text-valign': 'center',
-                'text-halign': 'center',
+      <div style={{ display: 'flex' }}>
+        {elements && (
+          <CytoscapeComponent
+            elements={elements}
+            stylesheet={[
+              {
+                selector: 'node',
+                style: {
+                  label: 'data(label)',
+                  'text-valign': 'center',
+                  'text-halign': 'center',
+                },
               },
-            },
-            {
-              selector: 'edge',
-              style: {
-                width: 3,
-                'line-color': '#ccc',
-                'target-arrow-color': '#ccc',
-                'target-arrow-shape': 'triangle',
-                'curve-style': 'bezier',
-                label: 'data(label)',
+              {
+                selector: 'edge',
+                style: {
+                  width: 3,
+                  'line-color': '#ccc',
+                  'target-arrow-color': '#ccc',
+                  'target-arrow-shape': 'triangle',
+                  'curve-style': 'bezier',
+                  label: 'data(label)',
+                },
               },
-            },
-            {
-              selector: '.highlighted',
-              style: {
-                'background-color': '#61bffc',
-                'line-color': '#61bffc',
-                'target-arrow-color': '#61bffc',
-                'transition-property':
-                  'background-color, line-color, target-arrow-color',
-                'transition-duration': 0.5,
+              {
+                selector: '.highlighted',
+                style: {
+                  'background-color': '#61bffc',
+                  'line-color': '#61bffc',
+                  'target-arrow-color': '#61bffc',
+                  'transition-property':
+                    'background-color, line-color, target-arrow-color',
+                  'transition-duration': 0.5,
+                },
               },
-            },
-          ]}
-          layout={{ name: 'dagre' }}
-          cy={(cy) => {
-            cyref.current = cy;
-          }}
-          style={{ width: '1200px', height: '600px' }}
-        />
-      )}
+            ]}
+            layout={{ name: 'dagre' }}
+            cy={(cy) => {
+              cyref.current = cy;
+            }}
+            style={{ width: '800px', height: '600px' }}
+          />
+        )}
+        <div>
+          {log.map(([msg, edgeId], idx) => (
+            <div
+              style={{
+                background: selectedIdx === idx ? 'lightyellow' : 'white',
+              }}
+              key={idx}
+              onClick={() => {
+                if (edgeId) {
+                  selectEdge(edgeId);
+                }
+                setSelectedIdx(idx);
+              }}
+            >
+              {msg}
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
   );
 };

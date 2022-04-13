@@ -1,5 +1,5 @@
 {{
-  import {Typ} from '../models/PCF/pcf';
+  import {Typ, Term} from '../models/PCF/types';
 }}
 
 Lam
@@ -17,8 +17,10 @@ Cond
   }
 
 App
-  = f:Prim _ x:Prim {
-      return { name: 'app', terms: [f, x]}
+  = f:Prim args:(_ x:Prim)+ {
+      return args.reduce((acc: Term, x: [string, Term]) => {
+        return { name: 'app', terms: [acc, x[1]]}
+      }, f);
   } / p:Prim {
       return p;
   }

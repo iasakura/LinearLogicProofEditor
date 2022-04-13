@@ -1,10 +1,5 @@
 import { Edge, ProofStructure } from './proof-net';
-
-export interface GraphViewer {
-  visitNode(id: string): Promise<void>;
-  visitEdge(id: string): Promise<void>;
-  getStart(pn: ProofStructure): Edge;
-}
+import { GraphTraveler } from './ps-traveler';
 
 type MultiplicativeList =
   | {
@@ -15,6 +10,15 @@ type MultiplicativeList =
       head: 'l' | 'r';
       tail: MultiplicativeList;
     };
+
+const mlistToString = (list: MultiplicativeList): string => {
+  if (list.name === 'empty') {
+    return '□';
+  } else {
+    const tail = mlistToString(list.tail);
+    return list.head + ':' + tail;
+  }
+};
 
 type ExponentialTree =
   | {
@@ -31,6 +35,27 @@ type ExponentialTree =
       rightChild: ExponentialTree;
     };
 
+const etreeToString = (tree: ExponentialTree): string => {
+  if (tree.name === 'empty') {
+    return '□';
+  } else if (tree.name === 'cons') {
+    if (tree.tail.name === 'node') {
+      return tree.head + ':' + '(' + etreeToString(tree.tail) + ')';
+    }
+    return tree.head + ':' + etreeToString(tree.tail);
+  } else {
+    let left = etreeToString(tree.leftChild);
+    let right = etreeToString(tree.rightChild);
+    if (tree.leftChild.name === 'node') {
+      left = '(' + left + ')';
+    }
+    if (tree.rightChild.name === 'node') {
+      right = '(' + right + ')';
+    }
+    return left + '.' + right;
+  }
+};
+
 type Constant = {
   val: number | boolean | undefined;
 };
@@ -40,6 +65,14 @@ type State = {
   tree: ExponentialTree;
   constant: Constant;
   nesting: number;
+};
+
+const stateToString = (state: State): string => {
+  const list = mlistToString(state.list);
+  const tree = etreeToString(state.tree);
+  const constant = state.constant.val?.toString() ?? '□';
+  const nesting = state.nesting;
+  return JSON.stringify({ list, tree, constant, nesting });
 };
 
 const initState: State = {
@@ -64,18 +97,14 @@ const other = (edges: [Edge, Edge], edge: Edge): Edge => {
 };
 
 const isDoor = (pn: ProofStructure, edge: Edge) =>
-  !!pn.boxes.find((box) => {
-    [...box.principle.concls(), ...box.auxiliaries].find((door) => {
-      door.id === edge.id;
-    });
-  });
+  !!pn.boxes.find((box) =>
+    [...box.principle.concls(), ...box.auxiliaries].find(
+      (door) => door.id === edge.id
+    )
+  );
 
 const isAuxDoor = (pn: ProofStructure, edge: Edge) =>
-  !!pn.boxes.find((box) => {
-    box.auxiliaries.find((door) => {
-      door.id === edge.id;
-    });
-  });
+  !!pn.boxes.find((box) => box.auxiliaries.find((door) => door.id === edge.id));
 
 const applyTreeTransInNesting = (
   tree: ExponentialTree,
@@ -111,305 +140,290 @@ const getTreeTransInNesting = (
   }
 };
 
-export class GoiTraveler {
-  private current: [Edge, Dir] | 'finish';
+export class GoIInterpreter {
+  private dir: Dir;
   private state: State;
 
-  public constructor(private pn: ProofStructure, private viewer: GraphViewer) {
-    this.current = [viewer.getStart(this.pn), 'upwards'];
+  public constructor(
+    private pn: ProofStructure,
+    private traveler: GraphTraveler,
+    start: Edge
+  ) {
+    traveler.setCurrent(start);
+    this.dir = 'upwards';
     this.state = initState;
   }
 
   public async run() {
+    let next = this.traveler.current;
+
+    // eslint-disable-next-line no-constant-condition
     while (true) {
-      if (this.current === 'finish') {
-        return;
-      } else {
-        const [edge, dir] = this.current;
+      const edge = next;
+      const promise = this.traveler.visit(edge);
 
-        if (dir === 'upwards') {
-          const link = edge.from;
-          // If current is Link
-          if (link.name === 'axiom') {
-            const next = other(link.concls(), edge);
-            this.current = [next, 'downwards'];
-            await this.viewer.visitEdge(next.id);
-          } else if (link.name === 'cut') {
-            throw Error('Cannot visit cut upwards');
-          } else if (link.name === 'par' || link.name === 'tensor') {
-            const list = this.state.list;
-            let next;
-            if (list.name === 'cons' && list.head === 'l') {
-              next = link.prems()[0];
-              this.state = { ...this.state, list: list.tail };
-              this.current = [next, 'upwards'];
-            } else if (list.name === 'cons' && list.head === 'r') {
-              next = link.prems()[1];
-              this.state = { ...this.state, list: list.tail };
-              this.current = [next, 'upwards'];
-            } else {
-              throw Error('Stack head should be "l" | "r"');
-            }
-            await this.viewer.visitEdge(next.id);
-          } else if (link.name === 'ofCourse') {
-            const next = link.prems()[0];
-            this.current = [next, 'upwards'];
-            await this.viewer.visitEdge(next.id);
-          } else if (link.name === 'dereliction') {
-            const tree = this.state.tree;
-            this.state = {
-              ...this.state,
-              tree: applyTreeTransInNesting(
-                tree,
-                this.state.nesting,
-                (tree) => {
-                  if (
-                    tree.name === 'node' &&
-                    tree.leftChild === { name: 'empty' }
-                  ) {
-                    return tree.rightChild;
-                  } else {
-                    throw Error('Tree should be node with left □');
-                  }
-                }
-              ),
-            };
-            const next = link.prems()[0];
-            this.current = [next, 'upwards'];
-            await this.viewer.visitEdge(next.id);
-          } else if (link.name === 'weakening') {
-            throw Error('Weakening must be unreachable');
-          } else if (link.name === 'contraction') {
-            this.state = {
-              ...this.state,
-              tree: applyTreeTransInNesting(
-                this.state.tree,
-                this.state.nesting,
-                (tree) => {
-                  if (tree.name === 'cons') {
-                    return tree.tail;
-                  } else {
-                    throw Error('Tree should be cons');
-                  }
-                }
-              ),
-            };
-            const tree = getTreeTransInNesting(
-              this.state.tree,
-              this.state.nesting
-            );
-            if (tree.name === 'cons') {
-              if (tree.head === 'L') {
-                const next = link.prems()[0];
-                this.current = [next, 'upwards'];
-                await this.viewer.visitEdge(next.id);
-              } else if (tree.head === 'R') {
-                const next = link.prems()[1];
-                this.current = [next, 'upwards'];
-                await this.viewer.visitEdge(next.id);
-              } else {
-                // never
-                return tree.head;
-              }
-            } else {
-              throw Error('Tree should be cons');
-            }
-          } else if (
-            link.name === 'succ' ||
-            link.name === 'pred' ||
-            link.name === 'iszero'
-          ) {
-            const f =
-              link.name === 'succ'
-                ? (n: number) => n + 1
-                : link.name === 'pred'
-                ? (n: number) => n - 1
-                : (n: number) => n === 0;
-            if (link.concls()[1].id === edge.id) {
-              const next = link.concls()[0];
-              this.current = [next, 'downwards'];
-              await this.viewer.visitEdge(next.id);
-            } else {
-              if (typeof this.state.constant.val === 'number') {
-                const next = link.concls()[0];
-                this.current = [next, 'downwards'];
-                this.state = {
-                  ...this.state,
-                  constant: { val: f(this.state.constant.val) },
-                };
-                await this.viewer.visitEdge(next.id);
-              } else {
-                throw Error('Constant should be a number');
-              }
-            }
-          } else if (link.name === 'cond') {
-            const [c, th, el, res] = link.concls();
-            if (edge.id === res.id) {
-              const next = c;
-              this.current = [next, 'downwards'];
-              await this.viewer.visitEdge(next.id);
-            } else if (edge.id === c.id) {
-              if (typeof this.state.constant.val === 'boolean') {
-                const next = this.state.constant.val ? th : el;
-                this.current = [next, 'downwards'];
-                this.state = {
-                  ...this.state,
-                  constant: { val: undefined },
-                };
-                await this.viewer.visitEdge(next.id);
-              } else {
-                throw Error('Constant should be a boolean');
-              }
-            } else {
-              const next = res;
-              this.current = [next, 'downwards'];
-              await this.viewer.visitEdge(next.id);
-            }
-          } else if (link.name === 'constant') {
-            const next = edge;
-            this.current = [next, 'downwards'];
-            this.state = { ...this.state, constant: { val: link.val } };
-            await this.viewer.visitEdge(next.id);
+      if (this.dir === 'upwards') {
+        const link = edge.from;
+        console.log(`${link.name}, ${this.dir}`);
+        // If current is Link
+        if (link.name === 'axiom') {
+          next = other(link.concls(), edge);
+          this.dir = 'downwards';
+        } else if (link.name === 'cut') {
+          throw Error('Cannot visit cut upwards');
+        } else if (link.name === 'par' || link.name === 'tensor') {
+          const list = this.state.list;
+          if (list.name === 'cons' && list.head === 'l') {
+            next = link.prems()[0];
+            this.state = { ...this.state, list: list.tail };
+            this.dir = 'upwards';
+          } else if (list.name === 'cons' && list.head === 'r') {
+            next = link.prems()[1];
+            this.state = { ...this.state, list: list.tail };
+            this.dir = 'upwards';
           } else {
-            // never
-            return link.name;
+            throw Error('Stack head should be "l" | "r"');
           }
-          if (isAuxDoor(this.pn, edge)) {
-            this.state = {
-              ...this.state,
-              tree: applyTreeTransInNesting(
-                this.state.tree,
-                this.state.nesting,
-                (tree) => {
-                  if (tree.name === 'node' && tree.leftChild.name === 'node') {
-                    return {
-                      name: 'node',
-                      leftChild: tree.leftChild.leftChild,
-                      rightChild: {
-                        name: 'node',
-                        leftChild: tree.leftChild.rightChild,
-                        rightChild: tree.rightChild,
-                      },
-                    };
-                  } else {
-                    throw Error('Invalid type of node');
-                  }
+        } else if (link.name === 'ofCourse') {
+          next = link.prems()[0];
+          this.dir = 'upwards';
+        } else if (link.name === 'dereliction') {
+          const tree = this.state.tree;
+          this.state = {
+            ...this.state,
+            tree: applyTreeTransInNesting(tree, this.state.nesting, (tree) => {
+              if (tree.name === 'node' && tree.leftChild.name === 'empty') {
+                return tree.rightChild;
+              } else {
+                throw Error('Tree should be node with left □');
+              }
+            }),
+          };
+          next = link.prems()[0];
+          this.dir = 'upwards';
+        } else if (link.name === 'weakening') {
+          throw Error('Weakening must be unreachable');
+        } else if (link.name === 'contraction') {
+          this.state = {
+            ...this.state,
+            tree: applyTreeTransInNesting(
+              this.state.tree,
+              this.state.nesting,
+              (tree) => {
+                if (tree.name === 'cons') {
+                  return tree.tail;
+                } else {
+                  throw Error('Tree should be cons');
                 }
-              ),
-            };
+              }
+            ),
+          };
+          const tree = getTreeTransInNesting(
+            this.state.tree,
+            this.state.nesting
+          );
+          if (tree.name === 'cons') {
+            if (tree.head === 'L') {
+              next = link.prems()[0];
+              this.dir = 'upwards';
+            } else if (tree.head === 'R') {
+              next = link.prems()[1];
+              this.dir = 'upwards';
+            } else {
+              // never
+              return tree.head;
+            }
+          } else {
+            throw Error('Tree should be cons');
           }
-          if (isDoor(this.pn, edge)) {
-            this.state = {
-              ...this.state,
-              nesting: this.state.nesting + 1,
-            };
+        } else if (
+          link.name === 'succ' ||
+          link.name === 'pred' ||
+          link.name === 'iszero'
+        ) {
+          const f =
+            link.name === 'succ'
+              ? (n: number) => n + 1
+              : link.name === 'pred'
+              ? (n: number) => n - 1
+              : (n: number) => n === 0;
+          if (link.concls()[1].id === edge.id) {
+            next = link.concls()[0];
+            this.dir = 'downwards';
+          } else {
+            if (typeof this.state.constant.val === 'number') {
+              next = link.concls()[0];
+              this.dir = 'downwards';
+              this.state = {
+                ...this.state,
+                constant: { val: f(this.state.constant.val) },
+              };
+            } else {
+              throw Error('Constant should be a number');
+            }
           }
+        } else if (link.name === 'cond') {
+          const [c, th, el, res] = link.concls();
+          if (edge.id === res.id) {
+            next = c;
+            this.dir = 'downwards';
+          } else if (edge.id === c.id) {
+            if (typeof this.state.constant.val === 'boolean') {
+              next = this.state.constant.val ? th : el;
+              this.dir = 'downwards';
+              this.state = {
+                ...this.state,
+                constant: { val: undefined },
+              };
+            } else {
+              throw Error('Constant should be a boolean');
+            }
+          } else {
+            next = res;
+            this.dir = 'downwards';
+          }
+        } else if (link.name === 'constant') {
+          next = edge;
+          this.dir = 'downwards';
+          this.state = { ...this.state, constant: { val: link.val } };
         } else {
-          const link = edge.to;
-
-          if (isDoor(this.pn, edge)) {
-            this.state = {
-              ...this.state,
-              nesting: this.state.nesting - 1,
-            };
-          }
-          if (isAuxDoor(this.pn, edge)) {
-            this.state = {
-              ...this.state,
-              tree: applyTreeTransInNesting(
-                this.state.tree,
-                this.state.nesting,
-                (tree) => {
-                  if (tree.name === 'node' && tree.rightChild.name === 'node') {
-                    return {
-                      name: 'node',
-                      leftChild: {
-                        name: 'node',
-                        leftChild: tree.leftChild,
-                        rightChild: tree.rightChild.leftChild,
-                      },
-                      rightChild: tree.rightChild.rightChild,
-                    };
-                  } else {
-                    throw Error('Invalid type of node');
-                  }
-                }
-              ),
-            };
-          }
-
-          if (!link) {
-            this.current = 'finish';
-          } else if (link.name === 'axiom') {
-            throw Error('Cannot visit axiom downwards');
-          } else if (link.name === 'cut') {
-            const next = other(link.prems(), edge);
-            this.current = [next, 'upwards'];
-            await this.viewer.visitEdge(next.id);
-          } else if (link.name === 'par' || link.name === 'tensor') {
-            const elm = link.prems()[0].id === edge.id ? 'l' : 'r';
-            const next = link.concls()[0];
-            this.current = [next, 'downwards'];
-            this.state = {
-              ...this.state,
-              list: { name: 'cons', head: elm, tail: this.state.list },
-            };
-            await this.viewer.visitEdge(next.id);
-          } else if (link.name === 'ofCourse') {
-            const next = link.concls()[0];
-            this.current = [next, 'downwards'];
-            await this.viewer.visitEdge(next.id);
-          } else if (link.name === 'dereliction') {
-            this.state = {
-              ...this.state,
-              tree: applyTreeTransInNesting(
-                this.state.tree,
-                this.state.nesting,
-                (tree) => {
+          // never
+          return link.name;
+        }
+        if (isAuxDoor(this.pn, edge)) {
+          this.state = {
+            ...this.state,
+            tree: applyTreeTransInNesting(
+              this.state.tree,
+              this.state.nesting,
+              (tree) => {
+                if (tree.name === 'node' && tree.leftChild.name === 'node') {
                   return {
                     name: 'node',
-                    leftChild: { name: 'empty' },
-                    rightChild: tree,
+                    leftChild: tree.leftChild.leftChild,
+                    rightChild: {
+                      name: 'node',
+                      leftChild: tree.leftChild.rightChild,
+                      rightChild: tree.rightChild,
+                    },
                   };
+                } else {
+                  throw Error('Invalid type of node');
                 }
-              ),
-            };
-            const next = link.concls()[0];
-            this.current = [next, 'downwards'];
-            await this.viewer.visitEdge(next.id);
-          } else if (link.name === 'weakening') {
-            throw Error('Weakening must be unreachable');
-          } else if (link.name === 'contraction') {
-            const elm = link.prems()[0].id === edge.id ? 'L' : 'R';
-            const next = link.concls()[0];
-            this.current = [next, 'downwards'];
-            this.state = {
-              ...this.state,
-              tree: applyTreeTransInNesting(
-                this.state.tree,
-                this.state.nesting,
-                (tree) => {
-                  return { name: 'cons', head: elm, tail: tree };
+              }
+            ),
+          };
+        }
+        if (isDoor(this.pn, edge)) {
+          this.state = {
+            ...this.state,
+            nesting: this.state.nesting + 1,
+          };
+        }
+      } else {
+        const link = edge.to;
+        console.log(`${link?.name}, ${this.dir}`);
+
+        if (isDoor(this.pn, edge)) {
+          this.state = {
+            ...this.state,
+            nesting: this.state.nesting - 1,
+          };
+        }
+        if (isAuxDoor(this.pn, edge)) {
+          this.state = {
+            ...this.state,
+            tree: applyTreeTransInNesting(
+              this.state.tree,
+              this.state.nesting,
+              (tree) => {
+                if (tree.name === 'node' && tree.rightChild.name === 'node') {
+                  return {
+                    name: 'node',
+                    leftChild: {
+                      name: 'node',
+                      leftChild: tree.leftChild,
+                      rightChild: tree.rightChild.leftChild,
+                    },
+                    rightChild: tree.rightChild.rightChild,
+                  };
+                } else {
+                  throw Error('Invalid type of node');
                 }
-              ),
-            };
-            await this.viewer.visitEdge(next.id);
-          } else if (
-            link.name === 'succ' ||
-            link.name === 'pred' ||
-            link.name === 'iszero'
-          ) {
-            throw Error('Cannot visit primitive downwards');
-          } else if (link.name === 'cond') {
-            throw Error('Cannot visit primitive cond');
-          } else if (link.name === 'constant') {
-            throw Error('Cannot visit primitive constant');
-          } else {
-            // never
-            return link.name;
-          }
+              }
+            ),
+          };
+        }
+
+        if (!link) {
+          this.traveler.log(stateToString(this.state), edge);
+          return;
+        } else if (link.name === 'axiom') {
+          throw Error('Cannot visit axiom downwards');
+        } else if (link.name === 'cut') {
+          next = other(link.prems(), edge);
+          this.dir = 'upwards';
+        } else if (link.name === 'par' || link.name === 'tensor') {
+          const elm = link.prems()[0].id === edge.id ? 'l' : 'r';
+          next = link.concls()[0];
+          this.dir = 'downwards';
+          this.state = {
+            ...this.state,
+            list: { name: 'cons', head: elm, tail: this.state.list },
+          };
+        } else if (link.name === 'ofCourse') {
+          next = link.concls()[0];
+          this.dir = 'downwards';
+        } else if (link.name === 'dereliction') {
+          this.state = {
+            ...this.state,
+            tree: applyTreeTransInNesting(
+              this.state.tree,
+              this.state.nesting,
+              (tree) => {
+                return {
+                  name: 'node',
+                  leftChild: { name: 'empty' },
+                  rightChild: tree,
+                };
+              }
+            ),
+          };
+          next = link.concls()[0];
+          this.dir = 'downwards';
+        } else if (link.name === 'weakening') {
+          throw Error('Weakening must be unreachable');
+        } else if (link.name === 'contraction') {
+          const elm = link.prems()[0].id === edge.id ? 'L' : 'R';
+          next = link.concls()[0];
+          this.dir = 'downwards';
+          this.state = {
+            ...this.state,
+            tree: applyTreeTransInNesting(
+              this.state.tree,
+              this.state.nesting,
+              (tree) => {
+                return { name: 'cons', head: elm, tail: tree };
+              }
+            ),
+          };
+        } else if (
+          link.name === 'succ' ||
+          link.name === 'pred' ||
+          link.name === 'iszero'
+        ) {
+          throw Error('Cannot visit primitive downwards');
+        } else if (link.name === 'cond') {
+          throw Error('Cannot visit primitive cond');
+        } else if (link.name === 'constant') {
+          throw Error('Cannot visit primitive constant');
+        } else {
+          // never
+          return link.name;
         }
       }
+      this.traveler.log(stateToString(this.state), edge);
+      await promise;
     }
   }
 }
